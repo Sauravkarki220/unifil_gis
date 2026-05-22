@@ -159,15 +159,15 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
           <div class="style-row" id="row-marker" style="display:none;">
             <span class="style-label">Icon Pin</span>
             <select id="s-marker" onchange="pushStyleUpdate()">
-              <option value=".icons/pins/red_pin_classic.png">Red Pin</option>
-              <option value=".icons/pins/blue_pin_classic.png">Blue Pin</option>
-              <option value=".icons/pins/yellow_pin_classic.png">Yellow Pin</option>
-              <option value=".icons/pins/green_pin_classic.png">Green Pin</option>
-              <option value=".icons/pins/orange_pin_classic.png">Orange Pin</option>
-              <option value=".icons/pins/pink_pin_classic.png">Pink Pin</option>
-              <option value=".icons/pins/purple_pin_classic.png">Purple Pin</option>
-              <option value=".icons/pins/teal_pin_classic.png">Teal Target</option>
-              <option value=".icons/pins/gray_pin_classic.png">Gray Target</option>
+              <option value="icons/pins/red_pin_classic.png">Red Pin</option>
+              <option value="icons/pins/blue_pin_classic.png">Blue Pin</option>
+              <option value="icons/pins/yellow_pin_classic.png">Yellow Pin</option>
+              <option value="icons/pins/green_pin_classic.png">Green Pin</option>
+              <option value="icons/pins/orange_pin_classic.png">Orange Pin</option>
+              <option value="icons/pins/pink_pin_classic.png">Pink Pin</option>
+              <option value="icons/pins/purple_pin_classic.png">Purple Pin</option>
+              <option value="icons/pins/teal_pin_classic.png">Teal Target</option>
+              <option value="icons/pins/gray_pin_classic.png">Gray Target</option>
             </select>
           </div>
 
@@ -348,7 +348,7 @@ function compileFeatureStyle(config, selected, geomType){
   let imageStyle;
   if (geomType === 'Point') {
     imageStyle = new ol.style.Icon({
-      src: config.marker || './icons/pins/red_pin_classic.png',
+      src: config.marker || 'icons/pins/red_pin_classic.png',
       anchor: [0.5, 1], 
       anchorXUnits: 'fraction', anchorYUnits: 'fraction',
     //   scale: selected ? 0.65 : 0.5
@@ -514,7 +514,7 @@ function switchTool(type){
         uid: trackingIdCounter,
         name: finalName, 
         meta_label: finalName,
-        meta_marker: cfg.marker || './icons/pins/red_pin_classic.png',
+        meta_marker: cfg.marker || 'icons/pins/red_pin_classic.png',
         meta_fill: cfg.fill || '#0099ff',
         meta_fill_op: cfg.fillOpacity || 35,
         meta_stroke: cfg.stroke || '#0055ff',
@@ -549,7 +549,7 @@ function handleFeatureSelectedEvent(feature){
   updateInspectorPanelUI(geomType);
 
   document.getElementById('s-label').value = feature.get('name') || feature.get('meta_label') || '';
-  document.getElementById('s-marker').value = feature.get('meta_marker') || './icons/pins/red_pin_classic.png';
+  document.getElementById('s-marker').value = feature.get('meta_marker') || 'icons/pins/red_pin_classic.png';
   document.getElementById('s-fill').value = feature.get('meta_fill') || '#0099ff';
   document.getElementById('s-fill-op').value = feature.get('meta_fill_op') || 35;
   document.getElementById('s-stroke').value = feature.get('meta_stroke') || '#0055ff';
@@ -782,15 +782,15 @@ function generateCustomKML(features) {
 
     let layerName = prompt('Enter layer name:');
   const PIN_MAP = {
-    './icons/pins/red_pin_classic.png': 'icons/red_pin_classic.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
-    './icons/pins/blue_pin_classic.png': 'icons/blue_pin_classic.png',
-    './icons/pins/yellow_pin_classic.png': 'icons/yellow_pin_classic.png',
-    './icons/pins/green_pin_classic.png': 'icons/green_pin_classic.png',
-    './icons/pins/orange_pin_classic.png': 'icons/orange_pin_classic.png',
-    './icons/pins/pink_pin_classic.png': 'icons/pink_pin_classic.png',
-    './icons/pins/purple_pin_classic.png': 'icons/purple_pin_classic.png',
-    './icons/pins/teal_pin_classic.png': 'icons/teal_pin_classic.png',
-    './icons/pins/gray_pin_classic.png': 'icons/gray_pin_classic.png'
+    'icons/pins/red_pin_classic.png': 'icons/red_pin_classic.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
+    'icons/pins/blue_pin_classic.png': 'icons/blue_pin_classic.png',
+    'icons/pins/yellow_pin_classic.png': 'icons/yellow_pin_classic.png',
+    'icons/pins/green_pin_classic.png': 'icons/green_pin_classic.png',
+    'icons/pins/orange_pin_classic.png': 'icons/orange_pin_classic.png',
+    'icons/pins/pink_pin_classic.png': 'icons/pink_pin_classic.png',
+    'icons/pins/purple_pin_classic.png': 'icons/purple_pin_classic.png',
+    'icons/pins/teal_pin_classic.png': 'icons/teal_pin_classic.png',
+    'icons/pins/gray_pin_classic.png': 'icons/gray_pin_classic.png'
   };
 
   let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -805,7 +805,7 @@ function generateCustomKML(features) {
     const name = feat.get('name') || `Feature ${index + 1}`;
     
     // Resolve localized source paths to structured KML links on generation
-    const localMarker = feat.get('meta_marker') || './icons/pins/red_pin_classic.png';
+    const localMarker = feat.get('meta_marker') || 'icons/pins/red_pin_classic.png';
     const exportMarker = PIN_MAP[localMarker] || localMarker;
 
     const fill = feat.get('meta_fill') || '#0099ff';
@@ -895,7 +895,7 @@ async function parseAndLoadKMLString(kmlText) {
     const geomType = feature.getGeometry().getType();
     const cfg = {
       text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
-      marker: './icons/pins/yellow_pin_classic.png',
+      marker: 'icons/pins/yellow_pin_classic.png',
       fill: '#00d4aa', fillOpacity: 30, stroke: '#00ffaa', width: 2
     };
     
