@@ -31,6 +31,7 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 .sep{ width:1px; height:20px; background:var(--border); }
 .topbar-title{ font-size:12px; color:var(--text2); }
 .tag{ font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:3px; font-weight:500; background:rgba(0,212,170,.15); color:var(--accent); border:1px solid rgba(0,212,170,.3); }
+.topbar-user{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;padding:2px 0;}.dev-label{font-size:9px;color:#7f8ea3;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.2px;}.dev-rank{font-size:11px;color:#00d4aa;font-family:var(--mono);font-weight:600;letter-spacing:.5px;}.dev-post{font-size:10px;color:#00a6ff;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;}
 
 #main{ flex:1; display:flex; overflow:hidden; }
 #sidebar{ width:290px; min-width:290px; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
@@ -97,6 +98,12 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
   <span class="logo">UNIFIL GIS</span><div class="sep"></div>
   <span class="topbar-title">Unified Vector Workspace</span>
   <span class="tag">Avenza Export Enabled</span>
+  <div class="topbar-user">
+    <span class="dev-label">Developed By</span>
+    <span class="dev-rank">T/CAPT. SAURAV KARKI</span>
+    <span class="dev-post">EDP CHIEF</span>
+  </div>
+
 </div>
 
 <div id="main">
@@ -466,14 +473,35 @@ async function handleRasterCacheAndLoad(url) {
   }
 
   try {
-    const tiffSource = new ol.source.GeoTIFF({ sources: [{ blob: blob }] });
-    geotiffOverlayLayer = new ol.layer.WebGLTile({ source: tiffSource, zIndex: 1 });
+    // const tiffSource = new ol.source.GeoTIFF({ sources: [{ blob: blob }] });
+    // geotiffOverlayLayer = new ol.layer.WebGLTile({ source: tiffSource, zIndex: 1 });
+    // map.addLayer(geotiffOverlayLayer);
+
+    const tiffSource = new ol.source.GeoTIFF({
+      sources: [{ blob: blob }],
+      interpolate: true
+    });
+
+    geotiffOverlayLayer = new ol.layer.WebGLTile({
+      source: tiffSource,
+      zIndex: 1
+    });
+
     map.addLayer(geotiffOverlayLayer);
     
     const viewConfig = await tiffSource.getView();
     if(viewConfig) {
       viewConfig.projection = 'EPSG:4326';
-      map.setView(new ol.View(viewConfig));
+      // map.setView(new ol.View(viewConfig));
+      map.setView(new ol.View({ // modified by EDP CHIED
+        projection: viewConfig.projection,
+        center: viewConfig.center,
+        zoom: 13,
+        maxZoom: 50,
+        minZoom: 1,
+        constrainResolution: false,
+        smoothResolutionConstraint: false
+      }));
     }
     
     if (!isFromCache) await writeMapBlobToCache(blob).catch(e => console.warn(e));
