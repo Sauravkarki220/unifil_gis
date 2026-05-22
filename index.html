@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFIL GIS Vector Workspace (Avenza Optimized)</title>
+
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css"> -->
+ <link rel="stylesheet" href="./css/ol.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after{ box-sizing:border-box; margin:0; padding:0; }
+:root{
+  --bg:#0d0f12; --panel:#13161b; --panel2:#1a1e25;
+  --border:#2a2f38; --border2:#353c48; --text:#e2e8f0;
+  --text2:#8896a7; --text3:#4a5568; --accent:#00d4aa;
+  --accent2:#0099ff; --danger:#ff4444; --radius:6px;
+  --font:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+body{ font-family:var(--font); background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
+
+#splash-screen { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+#splash-screen.fade-out { opacity: 0; visibility: hidden; }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--panel2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.splash-status { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: 1px; }
+
+#topbar{ height:44px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:16px; flex-shrink:0; z-index:100; }
+.logo{ font-family:var(--mono); font-size:12px; font-weight:500; color:var(--accent); letter-spacing:1px; text-transform:uppercase; }
+.sep{ width:1px; height:20px; background:var(--border); }
+.topbar-title{ font-size:12px; color:var(--text2); }
+.tag{ font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:3px; font-weight:500; background:rgba(0,212,170,.15); color:var(--accent); border:1px solid rgba(0,212,170,.3); }
+
+#main{ flex:1; display:flex; overflow:hidden; }
+#sidebar{ width:290px; min-width:290px; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+#sidebar-inner{ flex:1; overflow-y:auto; padding-bottom:20px; display:flex; flex-direction:column; }
+.section{ border-bottom:1px solid var(--border); padding:14px; flex-shrink:0; }
+.section.expandable{ flex-grow:1; display:flex; flex-direction:column; min-height:220px; overflow:hidden; border-bottom:none; }
+.section-title{ font-family:var(--mono); font-size:10px; font-weight:500; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+
+#file-drop{ margin-top:8px; border:1px dashed var(--border2); border-radius:var(--radius); padding:12px; text-align:center; cursor:pointer; position:relative; }
+#file-drop input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+.drop-label{ font-size:12px; color:var(--text2); }
+#file-name{ font-size:11px; color:var(--accent); margin-top:6px; font-family:var(--mono); }
+
+.btn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:7px 12px; border-radius:var(--radius); border:1px solid var(--border2); background:transparent; color:var(--text2); cursor:pointer; font-size:12px; transition:all .15s; }
+.btn:hover{ border-color:var(--text2); color:var(--text); }
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:#000; font-weight:600; }
+.btn.danger{ background:rgba(255,68,68,.1); border-color:var(--danger); color:var(--danger); }
+.btn.active{ background:rgba(0,212,170,.12); border-color:var(--accent); color:var(--accent); }
+.btn-full{ width:100%; }
+
+.tools-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+
+.style-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.style-label{ font-size:11px; color:var(--text2); width:80px; }
+.style-row input[type=color]{ width:32px; height:26px; }
+.style-row input[type=range]{ flex:1; }
+.style-row input[type=number], .style-row input[type=text], .style-row select {
+  flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); padding:5px 8px; font-size:12px;
+}
+
+#feature-editor-panel{ display:none; margin-top:8px; background:var(--panel2); padding:10px; border-radius:var(--radius); border:1px solid var(--border2); }
+#feature-editor-panel.active{ display:block; }
+
+#features-list{ display:flex; flex-direction:column; gap:4px; flex-grow:1; overflow-y:auto; }
+.feat-item{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:var(--panel2); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; }
+.feat-item.selected{ border-color:var(--accent2); background:rgba(0,153,255,.08); }
+.feat-info{ flex:1; display:flex; gap:8px; align-items:center; overflow:hidden; }
+.feat-info span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.feat-badge{ font-family:var(--mono); font-size:9px; padding:2px 5px; border-radius:3px; width:45px; text-align:center; }
+.badge-point{ background:rgba(0,212,170,.15); color:var(--accent); }
+.badge-line{ background:rgba(0,153,255,.15); color:var(--accent2); }
+.badge-poly{ background:rgba(168,85,247,.15); color:#c084fc; }
+.feat-trash-btn{ background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; }
+.feat-trash-btn:hover{ color:var(--danger); }
+
+#export-panel{ padding:14px; border-top:1px solid var(--border); }
+#map-wrap{ flex:1; position:relative; }
+#map{ width:100%; height:100%; }
+
+#toast{ position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--border2); color:var(--text); padding:8px 18px; border-radius:20px; font-size:12px; opacity:0; transition:.2s; z-index:999; }
+#toast.show{ opacity:1; }
+#coords-bar{ position:absolute; bottom:0; right:0; background:rgba(13,15,18,.85); font-family:var(--mono); font-size:11px; color:var(--text2); padding:4px 10px; z-index:10;}
+</style>
+</head>
+<body>
+
+<div id="splash-screen">
+  <div class="spinner"></div>
+  <div class="splash-status" id="splash-status">INITIALIZING WORKSPACE...</div>
+</div>
+
+<div id="topbar">
+  <span class="logo">UNIFIL GIS</span><div class="sep"></div>
+  <span class="topbar-title">Unified Vector Workspace</span>
+  <span class="tag">Avenza Export Enabled</span>
+</div>
+
+<div id="main">
+  <div id="sidebar">
+    <div id="sidebar-inner">
+      <div class="section">
+        <div class="section-title">Overlay Vector Layers</div>
+        <div id="file-drop">
+          <input type="file" id="map-file" accept=".kml,.kmz" onchange="handleFile(this)">
+          <div class="drop-label">Click / Drop KML or KMZ File</div>
+        </div>
+        <div id="file-name">Preloaded: base_map.dat</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Drawing Tools</div>
+        <div class="tools-grid">
+          <button class="btn active" id="tool-select" onclick="switchTool('select')">
+            <svg viewBox="0 0 24 24"><path d="M5 3l14 9-7 1-4 7z"/></svg> Select & Edit
+          </button>
+          <button class="btn" id="tool-Point" onclick="switchTool('Point')">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg> Marker
+          </button>
+          <button class="btn" id="tool-LineString" onclick="switchTool('LineString')">
+            <svg viewBox="0 0 24 24"><polyline points="5 19 12 12 19 5"/></svg> Line
+          </button>
+          <button class="btn" id="tool-Polygon" onclick="switchTool('Polygon')">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg> Polygon
+          </button>
+
+          <button class="btn" id="tool-GetUTM" onclick="getUTM()">
+            <svg viewBox="0 0 24 30" width="20" height="25" style="fill: currentColor;">
+                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                <polygon points="12 30 8 20 16 20" />
+            </svg> 
+            Get UTM
+            </button>
+
+            <button class="btn" id="tool-ShowUTM" onclick="showUTM()">
+            <svg viewBox="0 0 24 24" width="20" height="20" style="fill: none; stroke: currentColor; stroke-width: 2;">
+                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
+                <line x1="12" y1="7" x2="12" y2="17" />
+                <line x1="7" y1="12" x2="17" y2="12" />
+            </svg>
+            Show UTM
+            </button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title" id="style-title">Shape Inspector & Styling</div>
+        <div id="feature-editor-panel">
+          
+          <div class="style-row">
+            <span class="style-label">Name</span>
+            <input type="text" id="s-label" placeholder="Avenza Label Name..." oninput="pushStyleUpdate()">
+          </div>
+
+          <!-- LOCAL STORAGE VIEWS RESTORED: Pointing back to local file directories -->
+          <div class="style-row" id="row-marker" style="display:none;">
+            <span class="style-label">Icon Pin</span>
+            <select id="s-marker" onchange="pushStyleUpdate()">
+              <option value="./pins/red_pin_classic.png">Red Pin</option>
+              <option value="./pins/blue_pin_classic.png">Blue Pin</option>
+              <option value="./pins/yellow_pin_classic.png">Yellow Pin</option>
+              <option value="./pins/green_pin_classic.png">Green Pin</option>
+              <option value="./pins/orange_pin_classic.png">Orange Pin</option>
+              <option value="./pins/pink_pin_classic.png">Pink Pin</option>
+              <option value="./pins/purple_pin_classic.png">Purple Pin</option>
+              <option value="./pins/teal_pin_classic.png">Teal Target</option>
+              <option value="./pins/gray_pin_classic.png">Gray Target</option>
+            </select>
+          </div>
+
+          <div class="style-row" id="row-fill">
+            <span class="style-label">Fill Color</span>
+            <input type="color" id="s-fill" value="#0099ff" oninput="pushStyleUpdate()">
+          </div>
+          
+          <div class="style-row" id="row-fill-op">
+            <span class="style-label">Opacity</span>
+            <input type="range" id="s-fill-op" min="0" max="100" value="100" oninput="pushStyleUpdate()">
+          </div>
+          
+          <div class="style-row" id="row-stroke">
+            <span class="style-label">Line Color</span>
+            <input type="color" id="s-stroke" value="#0055ff" oninput="pushStyleUpdate()">
+          </div>
+          
+          <div class="style-row" id="row-stroke-w">
+            <span class="style-label">Line Width</span>
+            <input type="number" id="s-stroke-w" value="4" min="1" max="6" oninput="pushStyleUpdate()">
+          </div>
+
+          <button class="btn danger btn-full" style="margin-top:8px;" onclick="removeSelectedFeature()">Delete Shape</button>
+        </div>
+        <div id="editor-placeholder" style="color:var(--text3); font-size:11px; text-align:center; padding:10px 0;">
+          Select a shape on the map to rename and style it.
+        </div>
+      </div>
+
+      <div class="section expandable">
+        <div class="section-title">Created Shapes (<span id="feat-count">0</span>)</div>
+        <div id="features-list"></div>
+      </div>
+    </div>
+
+    <div id="export-panel">
+      <button class="btn primary btn-full" onclick="triggerKMZExport()">Export to Avenza KMZ</button>
+    </div>
+  </div>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+    <dialog id="utmModal" style="padding: 20px; border-radius: 8px; border: 1px solid #ccc;">
+        <h2 style="text-align: center;">UTM</h2>
+        <br>
+        <h3 id="utmDisplay" style="text-align: center;"></h3>
+            <br>
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <button onclick="document.getElementById('utmModal').close()">Close</button>
+    </dialog>
+    
+    <div id="toast"></div>
+    <div id="coords-bar">---</div>
+  </div>
+</div>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.1/dist-browser/geotiff.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script> -->
+
+<script src="./js/config.js"></script>
+<script src="./js/geotiff.js"></script>
+<script src="./js/ol.js"></script>
+<script src="./js/jszip.min.js"></script>
+<script src="./js/proj4.js"></script>
+
+<script>
+    document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        if (drawInteraction && drawInteraction.getActive()) {
+            drawInteraction.abortDrawing();
+            
+            // Optional: reset your UI buttons
+            const drawBtn = document.getElementById('draw-toggle-button');
+            if(drawBtn) drawBtn.classList.remove('active');
+        }
+    }
+});
+</script>
+
+<script>
+let map, geotiffOverlayLayer, drawInteraction, selectInteraction, modifyInteraction;
+let workspaceSource, workspaceLayer;
+let targetSelectedFeature = null;
+let trackingIdCounter = 0;
+
+const DB_NAME = 'UNIFIL_GIS_CACHE';
+const STORE_NAME = 'rasters';
+const MAP_KEY = 'base_map_tif';
+
+/* -------- CORE DB & RASTER FUNCTIONS -------- */
+function openCacheDatabase() {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!window.indexedDB) return reject(new Error("IndexedDB not supported"));
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+      };
+      request.onsuccess = (e) => resolve(e.target.result);
+      request.onerror = (e) => reject(e.target.error);
+    } catch (err) { reject(err); }
+  });
+}
+
+async function getCachedMapBlob() {
+  const db = await openCacheDatabase();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(MAP_KEY);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function writeMapBlobToCache(blob) {
+  const db = await openCacheDatabase();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(blob, MAP_KEY);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function purgeCacheEntry() {
+  const db = await openCacheDatabase();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).delete(MAP_KEY);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function ensureDirectDropboxUrl(url) {
+  if (!url) return url;
+  let clean = url.trim().replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+  if (clean.includes('?dl=')) clean = clean.split('?')[0];
+  return clean + '?dl=1';
+}
+
+function updateSplashStatus(text) { document.getElementById('splash-status').textContent = text.toUpperCase(); }
+function dismissSplashScreen() { document.getElementById('splash-screen').classList.add('fade-out'); }
+
+/* -------- STYLING & AVENZA COMPATIBILITY ENGINE -------- */
+
+function readStyleForm(){
+  return {
+    text: document.getElementById('s-label').value.trim(),
+    marker: document.getElementById('s-marker').value,
+    fill: document.getElementById('s-fill').value,
+    fillOpacity: parseInt(document.getElementById('s-fill-op').value),
+    stroke: document.getElementById('s-stroke').value,
+    width: parseInt(document.getElementById('s-stroke-w').value)
+  };
+}
+
+function convertHexToRgba(hex, a){
+  if (!hex || typeof hex !== 'string') hex = '#0099ff';
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a/100})`;
+}
+
+function updateInspectorPanelUI(geomType) {
+  document.getElementById('row-marker').style.display = (geomType === 'Point') ? 'flex' : 'none';
+  document.getElementById('row-fill').style.display = (geomType === 'Polygon') ? 'flex' : 'none';
+  document.getElementById('row-fill-op').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none'; // Keep flexibility for handles if ever extended
+  document.getElementById('row-stroke').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none';
+  document.getElementById('row-stroke-w').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none';
+}
+
+function compileFeatureStyle(config, selected, geomType){
+  const strokeColor = selected ? '#ffaa00' : config.stroke;
+  
+  let imageStyle;
+  if (geomType === 'Point') {
+    imageStyle = new ol.style.Icon({
+      src: config.marker || './icons/pins/red_pin_classic.png',
+      anchor: [0.5, 1], 
+      anchorXUnits: 'fraction', anchorYUnits: 'fraction',
+    //   scale: selected ? 0.65 : 0.5
+    scale: selected ? 0.35 : 0.25
+    });
+  } else {
+    imageStyle = new ol.style.Circle({
+      radius: 6,
+      fill: new ol.style.Fill({ color: strokeColor }),
+      stroke: new ol.style.Stroke({ color: '#ffffff', width: 4 })
+    });
+  }
+
+  return new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: convertHexToRgba(config.fill, config.fillOpacity)
+    }),
+    stroke: new ol.style.Stroke({
+      color: strokeColor,
+      width: config.width
+    }),
+    image: imageStyle,
+    text: new ol.style.Text({
+      text: config.text || '',
+      font: 'bold 12px sans-serif',
+      fill: new ol.style.Fill({ color: '#ffffff' }),
+      stroke: new ol.style.Stroke({ color: '#000000', width: 3 }),
+      offsetY: geomType === 'Point' ? -20 : -16
+    })
+  });
+}
+
+/* -------- MAP INITIALIZATION -------- */
+
+async function bootstrapGISWorkspace(){
+  updateSplashStatus("Assembling Vector Viewports...");
+  
+  workspaceSource = new ol.source.Vector();
+  workspaceLayer = new ol.layer.Vector({ source: workspaceSource, zIndex: 10 });
+
+  map = new ol.Map({
+    target: 'map',
+    layers: [workspaceLayer],
+    view: new ol.View({
+      projection: 'EPSG:4326', 
+      center: [35.50, 33.20],
+      zoom: 10
+    })
+  });
+
+//   map.on('pointermove', function(evt){
+//     const lonLat = evt.coordinate;
+//     document.getElementById('coords-bar').textContent = `${lonLat[1].toFixed(5)}°N , ${lonLat[0].toFixed(5)}°E`;
+//   });
+
+
+// Ensure this runs once after OpenLayers and proj4 are loaded
+    proj4.defs("EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs");
+    ol.proj.proj4.register(proj4);
+
+    map.on('pointermove', function(evt) {
+        // evt.coordinate is already [Longitude, Latitude] because projection is 'EPSG:4326'
+        const coordinate = evt.coordinate;
+        
+        // Transform from EPSG:4326 (Lat/Lon) to UTM Zone 36N (EPSG:32636)
+        const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
+        
+        const bar = document.getElementById('coords-bar');
+        if (bar) {
+            bar.textContent = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
+        }
+    });
+
+
+  selectInteraction = new ol.interaction.Select();
+  modifyInteraction = new ol.interaction.Modify({ features: selectInteraction.getFeatures() });
+
+  selectInteraction.on('select', function(e){
+    if(e.selected.length > 0) handleFeatureSelectedEvent(e.selected[0]);
+    else clearSelectedInspectorContext();
+  });
+
+  map.addInteraction(selectInteraction);
+  map.addInteraction(modifyInteraction);
+
+  workspaceSource.on('addfeature', () => rebuildFeatureTreeUI());
+  workspaceSource.on('removefeature', () => rebuildFeatureTreeUI());
+
+  const rasterSourceLink = window.APP_CONFIG.BASE_MAP_URL;
+  await handleRasterCacheAndLoad(rasterSourceLink);
+}
+
+async function handleRasterCacheAndLoad(url) {
+  let blob = null;
+  let isFromCache = false;
+  
+  try {
+    blob = await getCachedMapBlob();
+    if (blob && blob.size > 1000) { isFromCache = true; updateSplashStatus("Offline Cache Hit"); }
+    else if (blob) { await purgeCacheEntry(); blob = null; }
+  } catch (e) { console.warn(e); }
+
+  if (!blob) {
+    try {
+      updateSplashStatus("Downloading Base GeoTIFF...");
+      const directUrl = ensureDirectDropboxUrl(url);
+      const response = await fetch(directUrl);
+      if (!response.ok) throw new Error(`Fetch failed`);
+      blob = await response.blob();
+    } catch (err) {
+      updateSplashStatus("Download failed. Operating in vector-only mode.");
+      setTimeout(dismissSplashScreen, 3000);
+      return;
+    }
+  }
+
+  try {
+    const tiffSource = new ol.source.GeoTIFF({ sources: [{ blob: blob }] });
+    geotiffOverlayLayer = new ol.layer.WebGLTile({ source: tiffSource, zIndex: 1 });
+    map.addLayer(geotiffOverlayLayer);
+    
+    const viewConfig = await tiffSource.getView();
+    if(viewConfig) {
+      viewConfig.projection = 'EPSG:4326';
+      map.setView(new ol.View(viewConfig));
+    }
+    
+    if (!isFromCache) await writeMapBlobToCache(blob).catch(e => console.warn(e));
+    dismissSplashScreen();
+    displayNotification('Raster Initialized');
+
+  } catch (err) {
+    if (isFromCache) {
+      await purgeCacheEntry();
+      handleRasterCacheAndLoad(url);
+      return;
+    }
+    setTimeout(dismissSplashScreen, 3000);
+  }
+}
+
+/* -------- VECTOR DRAWING & EDITING -------- */
+
+function switchTool(type){
+  if(drawInteraction) { map.removeInteraction(drawInteraction); drawInteraction = null; }
+
+  if(type === 'select'){
+    selectInteraction.setActive(true);
+    modifyInteraction.setActive(true);
+  } else {
+    selectInteraction.setActive(false);
+    modifyInteraction.setActive(false);
+
+    drawInteraction = new ol.interaction.Draw({ source: workspaceSource, type: type });
+
+    drawInteraction.on('drawend', function(evt){
+      trackingIdCounter++;
+      const geomType = evt.feature.getGeometry().getType();
+      const cfg = readStyleForm();
+      const finalName = cfg.text || `${geomType} ${trackingIdCounter}`;
+      
+      evt.feature.setProperties({
+        uid: trackingIdCounter,
+        name: finalName, 
+        meta_label: finalName,
+        meta_marker: cfg.marker || './icons/pins/red_pin_classic.png',
+        meta_fill: cfg.fill || '#0099ff',
+        meta_fill_op: cfg.fillOpacity || 35,
+        meta_stroke: cfg.stroke || '#0055ff',
+        meta_stroke_w: cfg.width || 2
+      });
+      
+      evt.feature.setStyle(compileFeatureStyle({
+        text: finalName, marker: evt.feature.get('meta_marker'),
+        fill: evt.feature.get('meta_fill'), fillOpacity: evt.feature.get('meta_fill_op'),
+        stroke: evt.feature.get('meta_stroke'), width: evt.feature.get('meta_stroke_w')
+      }, false, geomType));
+    });
+    map.addInteraction(drawInteraction);
+  }
+
+//   ['select','Point','LineString','Polygon'].forEach(id => {
+//     document.getElementById('tool-'+id).classList.toggle('active', id === type);
+//   });
+toggleActiveTool('tool-' + type);
+}
+
+function handleFeatureSelectedEvent(feature){
+  if(targetSelectedFeature && targetSelectedFeature !== feature){
+    clearSelectedInspectorContext(true); 
+  }
+
+  targetSelectedFeature = feature;
+  const geomType = feature.getGeometry().getType();
+  
+  document.getElementById('editor-placeholder').style.display = 'none';
+  document.getElementById('feature-editor-panel').classList.add('active');
+  updateInspectorPanelUI(geomType);
+
+  document.getElementById('s-label').value = feature.get('name') || feature.get('meta_label') || '';
+  document.getElementById('s-marker').value = feature.get('meta_marker') || './icons/pins/red_pin_classic.png';
+  document.getElementById('s-fill').value = feature.get('meta_fill') || '#0099ff';
+  document.getElementById('s-fill-op').value = feature.get('meta_fill_op') || 35;
+  document.getElementById('s-stroke').value = feature.get('meta_stroke') || '#0055ff';
+  document.getElementById('s-stroke-w').value = feature.get('meta_stroke_w') || 2;
+
+  const cfg = readStyleForm();
+  feature.setStyle(compileFeatureStyle(cfg, true, geomType));
+  rebuildFeatureTreeUI();
+}
+
+function clearSelectedInspectorContext(soft = false){
+  if(targetSelectedFeature){
+    const geomType = targetSelectedFeature.getGeometry().getType();
+    const oldCfg = {
+      text: targetSelectedFeature.get('name'),
+      marker: targetSelectedFeature.get('meta_marker'),
+      fill: targetSelectedFeature.get('meta_fill'),
+      fillOpacity: targetSelectedFeature.get('meta_fill_op'),
+      stroke: targetSelectedFeature.get('meta_stroke'),
+      width: targetSelectedFeature.get('meta_stroke_w')
+    };
+    targetSelectedFeature.setStyle(compileFeatureStyle(oldCfg, false, geomType));
+  }
+  
+  if(!soft) {
+    targetSelectedFeature = null;
+    document.getElementById('feature-editor-panel').classList.remove('active');
+    document.getElementById('editor-placeholder').style.display = 'block';
+    rebuildFeatureTreeUI();
+  }
+}
+
+function pushStyleUpdate(){
+  if(!targetSelectedFeature) return;
+  const geomType = targetSelectedFeature.getGeometry().getType();
+  const cfg = readStyleForm();
+  
+  targetSelectedFeature.setProperties({
+    name: cfg.text, 
+    meta_label: cfg.text,
+    meta_marker: cfg.marker,
+    meta_fill: cfg.fill,
+    meta_fill_op: cfg.fillOpacity,
+    meta_stroke: cfg.stroke,
+    meta_stroke_w: cfg.width
+  });
+  
+  targetSelectedFeature.setStyle(compileFeatureStyle(cfg, true, geomType));
+  rebuildFeatureTreeUI();
+}
+
+function rebuildFeatureTreeUI(){
+  const list = document.getElementById('features-list');
+  const feats = workspaceSource.getFeatures();
+  document.getElementById('feat-count').textContent = feats.length;
+
+  if(!feats.length){ list.innerHTML='<div style="padding:10px;color:var(--text3);text-align:center;">No shapes on map.</div>'; return; }
+  list.innerHTML='';
+
+  feats.forEach(feat => {
+    const div = document.createElement('div');
+    div.className = 'feat-item';
+    if(targetSelectedFeature && targetSelectedFeature.get('uid') === feat.get('uid')) div.classList.add('selected');
+
+    const geom = feat.getGeometry().getType();
+    let badge='POINT'; let badgeClass='badge-point';
+    if(geom==='LineString'){ badge='LINE'; badgeClass='badge-line'; }
+    if(geom==='Polygon'){ badge='POLY'; badgeClass='badge-poly'; }
+
+    const fName = feat.get('name') || feat.get('meta_label') || 'Unnamed Shape';
+
+    div.innerHTML = `
+      <div class="feat-info">
+        <span class="feat-badge ${badgeClass}">${badge}</span>
+        <span>${fName}</span>
+      </div>
+      <button class="feat-trash-btn">✕</button>
+    `;
+
+    div.onclick = () => {
+      selectInteraction.getFeatures().clear();
+      selectInteraction.getFeatures().push(feat);
+      handleFeatureSelectedEvent(feat);
+    };
+
+    div.querySelector('.feat-trash-btn').onclick = (e) => {
+      e.stopPropagation();
+      workspaceSource.removeFeature(feat);
+      if(targetSelectedFeature === feat) clearSelectedInspectorContext();
+    };
+    list.appendChild(div);
+  });
+}
+
+function removeSelectedFeature(){
+  if(!targetSelectedFeature) return;
+  workspaceSource.removeFeature(targetSelectedFeature);
+  targetSelectedFeature = null;
+  document.getElementById('feature-editor-panel').classList.remove('active');
+  document.getElementById('editor-placeholder').style.display = 'block';
+  rebuildFeatureTreeUI();
+}
+
+function getUTM(){
+    toggleActiveTool('tool-GetUTM');
+
+    let isCapturing = false;
+
+    isCapturing = true;
+    map.getTargetElement().style.cursor = 'crosshair'; // Visual feedback
+
+    // Handle the capture
+    map.on('singleclick', function(evt) {
+    if (!isCapturing) return;
+
+    const coordinate = evt.coordinate; // Lat/Lon
+    const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
+    
+    const utmString = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
+    
+    // Display in modal
+    document.getElementById('utmDisplay').textContent = utmString;
+    document.getElementById('utmModal').showModal();
+    // console.log(utmString);
+    // Reset state
+    isCapturing = false;
+    map.getTargetElement().style.cursor = '';
+    });
+}
+
+function showUTM(){
+    toggleActiveTool('tool-ShowUTM');
+
+    input = prompt('Enter the UTM coordinates in the format "36N 500000 4649776"');
+    const regex = /(\d+N)\s+(\d+)\s+(\d+)/i;
+    const match = input.match(regex);
+
+    if (!match) {
+        alert("Format error! Please use: 36N 726668 3676948");
+        return;
+    }
+
+    const zone = match[1].toUpperCase(); // e.g., "36N"
+    const easting = parseFloat(match[2]);
+    const northing = parseFloat(match[3]);
+
+    // 1. Define projection for the zone (Dynamically registered if needed)
+    const epsgCode = 'EPSG:326' + zone.replace('N', '');
+    
+    try {
+        // 2. Transform UTM -> EPSG:4326
+        const lonLat = ol.proj.transform([easting, northing], epsgCode, 'EPSG:4326');
+        
+        // 3. Navigate
+        map.getView().animate({
+            center: lonLat,
+            zoom: 16,
+            duration: 800
+        });
+
+        // 4. Optional: Add a temporary marker
+        addTemporaryMarker(lonLat);
+    } catch (e) {
+        alert("Projection error: Ensure the zone is supported.");
+    }
+}
+
+function addTemporaryMarker(lonLat) {
+    const feature = new ol.Feature({
+        geometry: new ol.geom.Point(lonLat)
+    });
+    
+    // Simple style for the jump-to marker
+    feature.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 8,
+            fill: new ol.style.Fill({ color: '#ff0000' }),
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+        })
+    }));
+
+    workspaceSource.addFeature(feature);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => workspaceSource.removeFeature(feature), 5000);
+}
+
+function copyToClipboard() {
+    const text = document.getElementById('utmDisplay').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        // alert("Copied to clipboard!");
+    });
+    document.getElementById('utmModal').close();
+}
+
+function toggleActiveTool(toolId) {
+    const toolButtons = ['tool-select', 'tool-Point', 'tool-LineString', 'tool-Polygon', 'tool-GetUTM', 'tool-ShowUTM'];
+    toolButtons.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle('active', id === toolId);
+    });
+}
+/* -------- EXPORT & IMPORT ENGINE WITH CUSTOM SERIALIZER -------- */
+
+function escapeXml(unsafe) {
+  if (!unsafe) return '';
+  return unsafe.toString().replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
+}
+
+function convertToKmlColor(hex, opacityPercent) {
+  if (!hex || hex.charAt(0) !== '#') hex = '#0099ff';
+  const r = hex.slice(1, 3);
+  const g = hex.slice(3, 5);
+  const b = hex.slice(5, 7);
+  const pct = opacityPercent !== undefined ? opacityPercent : 100;
+  const a = Math.round((pct / 100) * 255).toString(16).padStart(2, '0');
+  return (a + b + g + r).toLowerCase();
+}
+
+// AVENZA TARGET INTERCEPTOR: Translates local display URLs to standard Google CDN strings that Avenza maps directly to internal offline classic shapes
+function generateCustomKML(features) {
+
+    let layerName = prompt('Enter layer name:');
+  const PIN_MAP = {
+    './icons/pins/red_pin_classic.png': 'icons/red_pin_classic.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
+    './icons/pins/blue_pin_classic.png': 'icons/blue_pin_classic.png',
+    './icons/pins/yellow_pin_classic.png': 'icons/yellow_pin_classic.png',
+    './icons/pins/green_pin_classic.png': 'icons/green_pin_classic.png',
+    './icons/pins/orange_pin_classic.png': 'icons/orange_pin_classic.png',
+    './icons/pins/pink_pin_classic.png': 'icons/pink_pin_classic.png',
+    './icons/pins/purple_pin_classic.png': 'icons/purple_pin_classic.png',
+    './icons/pins/teal_pin_classic.png': 'icons/teal_pin_classic.png',
+    './icons/pins/gray_pin_classic.png': 'icons/gray_pin_classic.png'
+  };
+
+  let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  kml += `<kml xmlns="http://www.opengis.net/kml/2.2">\n`;
+  kml += `  <Document>\n`;
+  kml += `    <name>${escapeXml(layerName)}</name>\n`;
+
+  features.forEach((feat, index) => {
+    const geom = feat.getGeometry();
+    if (!geom) return;
+    const type = geom.getType();
+    const name = feat.get('name') || `Feature ${index + 1}`;
+    
+    // Resolve localized source paths to structured KML links on generation
+    const localMarker = feat.get('meta_marker') || './pins/red_pin_classic.png';
+    const exportMarker = PIN_MAP[localMarker] || localMarker;
+
+    const fill = feat.get('meta_fill') || '#0099ff';
+    const fillOp = feat.get('meta_fill_op') !== undefined ? feat.get('meta_fill_op') : 35;
+    const stroke = feat.get('meta_stroke') || '#0055ff';
+    const strokeW = feat.get('meta_stroke_w') || 2;
+
+    const styleId = `style_${feat.get('uid') || index}`;
+    kml += `    <Style id="${styleId}">\n`;
+    
+    if (type === 'Point') {
+      kml += `      <IconStyle>\n`;
+      kml += `        <scale>0.5</scale>\n`;
+      kml += `        <Icon><href>${exportMarker}</href></Icon>\n`;
+      kml += `        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>\n`;
+      kml += `      </IconStyle>\n`;
+    }
+    if (type === 'LineString' || type === 'Polygon') {
+      kml += `      <LineStyle>\n`;
+      kml += `        <color>${convertToKmlColor(stroke, 100)}</color>\n`;
+      kml += `        <width>${strokeW}</width>\n`;
+      kml += `      </LineStyle>\n`;
+    }
+    if (type === 'Polygon') {
+      kml += `      <PolyStyle>\n`;
+      kml += `        <color>${convertToKmlColor(fill, fillOp)}</color>\n`;
+      kml += `        <fill>1</fill>\n`;
+      kml += `        <outline>1</outline>\n`;
+      kml += `      </PolyStyle>\n`;
+    }
+    kml += `    </Style>\n`;
+
+    kml += `    <Placemark>\n`;
+    kml += `      <name>${escapeXml(name)}</name>\n`;
+    kml += `      <styleUrl>#${styleId}</styleUrl>\n`;
+
+    if (type === 'Point') {
+      const coords = geom.getCoordinates();
+      kml += `      <Point>\n`;
+      kml += `        <coordinates>${coords[0]},${coords[1]},0</coordinates>\n`;
+      kml += `      </Point>\n`;
+    } else if (type === 'LineString') {
+      const coords = geom.getCoordinates();
+      const coordStr = coords.map(c => `${c[0]},${c[1]},0`).join(' ');
+      kml += `      <LineString>\n`;
+      kml += `        <tessellate>1</tessellate>\n`;
+      kml += `        <coordinates>${coordStr}</coordinates>\n`;
+      kml += `      </LineString>\n`;
+    } else if (type === 'Polygon') {
+      const rings = geom.getCoordinates();
+      kml += `      <Polygon>\n`;
+      kml += `        <tessellate>1</tessellate>\n`;
+      rings.forEach(ring => {
+        kml += `        <outerBoundaryIs>\n`;
+        kml += `          <LinearRing>\n`;
+        const coordStr = ring.map(c => `${c[0]},${c[1]},0`).join(' ');
+        kml += `            <coordinates>${coordStr}</coordinates>\n`;
+        kml += `          </LinearRing>\n`;
+        kml += `        </outerBoundaryIs>\n`;
+      });
+      kml += `      </Polygon>\n`;
+    }
+    kml += `    </Placemark>\n`;
+  });
+
+  kml += `  </Document>\n`;
+  kml += `</kml>\n`;
+  return kml;
+}
+
+async function handleFile(input){
+  if(!input.files[0]) return;
+  const file = input.files[0];
+  if(file.name.toLowerCase().endsWith('.kml')) importKMLFile(file);
+  else if(file.name.toLowerCase().endsWith('.kmz')) importKMZFile(file);
+  else displayNotification('Unsupported format');
+}
+
+async function parseAndLoadKMLString(kmlText) {
+  const format = new ol.format.KML({ extractStyles: false });
+  const feats = format.readFeatures(kmlText, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:4326' });
+
+  if (!feats.length) throw new Error("No features extracted");
+
+  feats.forEach(feature => {
+    trackingIdCounter++;
+    const geomType = feature.getGeometry().getType();
+    const cfg = {
+      text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
+      marker: './pins/yellow_pin_classic.png',
+      fill: '#00d4aa', fillOpacity: 30, stroke: '#00ffaa', width: 2
+    };
+    
+    feature.setProperties({
+      uid: trackingIdCounter,
+      name: cfg.text,
+      meta_label: cfg.text,
+      meta_marker: cfg.marker,
+      meta_fill: cfg.fill, meta_fill_op: cfg.fillOpacity,
+      meta_stroke: cfg.stroke, meta_stroke_w: cfg.width
+    });
+    feature.setStyle(compileFeatureStyle(cfg, false, geomType));
+    workspaceSource.addFeature(feature);
+  });
+
+  map.getView().fit(workspaceSource.getExtent(), { padding: [40, 40, 40, 40], duration: 700 });
+}
+
+async function importKMLFile(blob){
+  try{ await parseAndLoadKMLString(await blob.text()); displayNotification('KML Imported'); }
+  catch(err){ console.error(err); displayNotification('Import Failed'); }
+}
+
+async function importKMZFile(blob) {
+  try {
+    displayNotification('Extracting KMZ...');
+    const zip = await JSZip.loadAsync(blob);
+    let kmlFile = zip.file("doc.kml") || zip.file(Object.keys(zip.files).find(n => n.toLowerCase().endsWith('.kml')));
+    if (!kmlFile) throw new Error("No KML in KMZ");
+    await parseAndLoadKMLString(await kmlFile.async("string"));
+    displayNotification('KMZ Imported');
+  } catch (err) { console.error(err); displayNotification('KMZ Extraction Failed'); }
+}
+
+async function triggerKMZExport(){
+  const feats = workspaceSource.getFeatures();
+  if(!feats.length){ displayNotification('No Features'); return; }
+
+  const previouslySelected = targetSelectedFeature;
+  if(previouslySelected) clearSelectedInspectorContext(); 
+
+  try {
+    displayNotification('Compiling layers...');
+    
+    const kmlText = generateCustomKML(feats);
+
+    if(previouslySelected) {
+      selectInteraction.getFeatures().push(previouslySelected);
+      handleFeatureSelectedEvent(previouslySelected);
+    }
+
+    const zip = new JSZip();
+    zip.file("doc.kml", kmlText);
+    const kmzBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(kmzBlob);
+    a.download = 'workspace.kmz';
+    a.click();
+    displayNotification('Avenza KMZ Exported');
+  } catch (error) { console.error(error); displayNotification('Export Failed'); }
+}
+
+let toastTimer;
+function displayNotification(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ el.classList.remove('show'); }, 2500);
+}
+
+window.addEventListener('load', bootstrapGISWorkspace);
+</script>
+</body>
+</html>
