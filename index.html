@@ -159,15 +159,15 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
           <div class="style-row" id="row-marker" style="display:none;">
             <span class="style-label">Icon Pin</span>
             <select id="s-marker" onchange="pushStyleUpdate()">
-              <option value="./pins/red_pin_classic.png">Red Pin</option>
-              <option value="./pins/blue_pin_classic.png">Blue Pin</option>
-              <option value="./pins/yellow_pin_classic.png">Yellow Pin</option>
-              <option value="./pins/green_pin_classic.png">Green Pin</option>
-              <option value="./pins/orange_pin_classic.png">Orange Pin</option>
-              <option value="./pins/pink_pin_classic.png">Pink Pin</option>
-              <option value="./pins/purple_pin_classic.png">Purple Pin</option>
-              <option value="./pins/teal_pin_classic.png">Teal Target</option>
-              <option value="./pins/gray_pin_classic.png">Gray Target</option>
+              <option value=".icons/pins/red_pin_classic.png">Red Pin</option>
+              <option value=".icons/pins/blue_pin_classic.png">Blue Pin</option>
+              <option value=".icons/pins/yellow_pin_classic.png">Yellow Pin</option>
+              <option value=".icons/pins/green_pin_classic.png">Green Pin</option>
+              <option value=".icons/pins/orange_pin_classic.png">Orange Pin</option>
+              <option value=".icons/pins/pink_pin_classic.png">Pink Pin</option>
+              <option value=".icons/pins/purple_pin_classic.png">Purple Pin</option>
+              <option value=".icons/pins/teal_pin_classic.png">Teal Target</option>
+              <option value=".icons/pins/gray_pin_classic.png">Gray Target</option>
             </select>
           </div>
 
@@ -805,7 +805,7 @@ function generateCustomKML(features) {
     const name = feat.get('name') || `Feature ${index + 1}`;
     
     // Resolve localized source paths to structured KML links on generation
-    const localMarker = feat.get('meta_marker') || './pins/red_pin_classic.png';
+    const localMarker = feat.get('meta_marker') || './icons/pins/red_pin_classic.png';
     const exportMarker = PIN_MAP[localMarker] || localMarker;
 
     const fill = feat.get('meta_fill') || '#0099ff';
@@ -895,7 +895,7 @@ async function parseAndLoadKMLString(kmlText) {
     const geomType = feature.getGeometry().getType();
     const cfg = {
       text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
-      marker: './pins/yellow_pin_classic.png',
+      marker: './icons/pins/yellow_pin_classic.png',
       fill: '#00d4aa', fillOpacity: 30, stroke: '#00ffaa', width: 2
     };
     
