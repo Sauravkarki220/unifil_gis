@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UNIFIL GIS Vector Workspace (Avenza Optimized)</title>
 
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css"> -->
- <link rel="stylesheet" href="./css/ol.css">
+<link rel="stylesheet" href="./css/ol.css">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -85,6 +84,29 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 #toast{ position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--border2); color:var(--text); padding:8px 18px; border-radius:20px; font-size:12px; opacity:0; transition:.2s; z-index:999; }
 #toast.show{ opacity:1; }
 #coords-bar{ position:absolute; bottom:0; right:0; background:rgba(13,15,18,.85); font-family:var(--mono); font-size:11px; color:var(--text2); padding:4px 10px; z-index:10;}
+
+/* Custom Icon Dropdown Styles */
+.custom-select { position: relative; flex: 1; user-select: none; }
+.select-selected { 
+  background: var(--panel2); border: 1px solid var(--border); 
+  border-radius: var(--radius); padding: 5px 8px; 
+  display: flex; align-items: center; gap: 8px; 
+  cursor: pointer; font-size: 12px; color: var(--text);
+}
+.select-items { 
+  position: absolute; background: var(--panel2); 
+  border: 1px solid var(--border); border-radius: var(--radius); 
+  top: 100%; left: 0; right: 0; z-index: 99; 
+  margin-top: 4px; max-height: 196px; overflow-y: auto; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.select-hide { display: none; }
+.select-items div { 
+  padding: 6px 8px; display: flex; align-items: center; gap: 8px; 
+  cursor: pointer; font-size: 12px; color: var(--text);
+}
+.select-items div:hover { background: rgba(0, 212, 170, 0.15); color: var(--accent); }
+.select-items img, .select-selected img { width: 14px; height: auto; object-fit: contain; }
 </style>
 </head>
 <body>
@@ -162,20 +184,41 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
             <input type="text" id="s-label" placeholder="Avenza Label Name..." oninput="pushStyleUpdate()">
           </div>
 
-          <!-- LOCAL STORAGE VIEWS RESTORED: Pointing back to local file directories -->
           <div class="style-row" id="row-marker" style="display:none;">
             <span class="style-label">Icon Pin</span>
-            <select id="s-marker" onchange="pushStyleUpdate()">
-              <option value="icons/pins/red_pin_classic.png">Red Pin</option>
-              <option value="icons/pins/blue_pin_classic.png">Blue Pin</option>
-              <option value="icons/pins/yellow_pin_classic.png">Yellow Pin</option>
-              <option value="icons/pins/green_pin_classic.png">Green Pin</option>
-              <option value="icons/pins/orange_pin_classic.png">Orange Pin</option>
-              <option value="icons/pins/pink_pin_classic.png">Pink Pin</option>
-              <option value="icons/pins/purple_pin_classic.png">Purple Pin</option>
-              <option value="icons/pins/teal_pin_classic.png">Teal Target</option>
-              <option value="icons/pins/gray_pin_classic.png">Gray Target</option>
-            </select>
+            
+            <div class="custom-select" id="custom-icon-select">
+              <div class="select-selected" onclick="toggleIconDropdown()">
+                <img id="selected-icon-img" src="icons/pins/red_pin_classic.png" alt="pin">
+                <span id="selected-icon-text">Red Pin</span>
+              </div>
+              
+              <div class="select-items select-hide" id="icon-dropdown-items">
+                <div onclick="selectIcon('icons/pins/red_pin_classic.png', 'Red Pin')">
+                  <img src="icons/pins/red_pin_classic.png"> Red Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/blue_pin_classic.png', 'Blue Pin')">
+                  <img src="icons/pins/blue_pin_classic.png"> Blue Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/yellow_pin_classic.png', 'Yellow Pin')">
+                  <img src="icons/pins/yellow_pin_classic.png"> Yellow Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/green_pin_classic.png', 'Green Pin')">
+                  <img src="icons/pins/green_pin_classic.png"> Green Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/orange_pin_classic.png', 'Orange Pin')">
+                  <img src="icons/pins/orange_pin_classic.png"> Orange Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/purple_pin_classic.png', 'Purple Pin')">
+                  <img src="icons/pins/purple_pin_classic.png"> Purple Pin
+                </div>
+                <div onclick="selectIcon('icons/pins/alert.png', 'Alert')">
+                  <img src="icons/pins/alert.png"> Alert
+                </div>
+              </div>
+            </div>
+            
+            <input type="hidden" id="s-marker" value="icons/pins/red_pin_classic.png">
           </div>
 
           <div class="style-row" id="row-fill">
@@ -231,11 +274,6 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
     <div id="coords-bar">---</div>
   </div>
 </div>
-
-<!-- <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.1/dist-browser/geotiff.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script> -->
 
 <script src="./js/config.js"></script>
 <script src="./js/geotiff.js"></script>
@@ -319,6 +357,46 @@ function ensureDirectDropboxUrl(url) {
 
 function updateSplashStatus(text) { document.getElementById('splash-status').textContent = text.toUpperCase(); }
 function dismissSplashScreen() { document.getElementById('splash-screen').classList.add('fade-out'); }
+
+/* -------- CUSTOM ICON DROPDOWN LOGIC -------- */
+function toggleIconDropdown() {
+    document.getElementById('icon-dropdown-items').classList.toggle('select-hide');
+}
+
+function selectIcon(val, text) {
+    // 1. Update the hidden input
+    document.getElementById('s-marker').value = val;
+    // 2. Update the visual display
+    document.getElementById('selected-icon-img').src = val;
+    document.getElementById('selected-icon-text').textContent = text;
+    // 3. Hide the dropdown
+    document.getElementById('icon-dropdown-items').classList.add('select-hide');
+    // 4. Push the style to the map immediately
+    pushStyleUpdate(); 
+}
+
+function updateCustomSelectUI(val) {
+    const labelMap = {
+        'icons/pins/red_pin_classic.png': 'Red Pin',
+        'icons/pins/blue_pin_classic.png': 'Blue Pin',
+        'icons/pins/yellow_pin_classic.png': 'Yellow Pin',
+        'icons/pins/green_pin_classic.png': 'Green Pin',
+        'icons/pins/orange_pin_classic.png': 'Orange Pin',
+        'icons/pins/purple_pin_classic.png': 'Purple Pin'
+    };
+    document.getElementById('selected-icon-img').src = val;
+    document.getElementById('selected-icon-text').textContent = labelMap[val] || 'Pin';
+}
+
+// Close dropdown if the user clicks anywhere outside of it
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.custom-select')) {
+        const dropdown = document.getElementById('icon-dropdown-items');
+        if(dropdown && !dropdown.classList.contains('select-hide')) {
+            dropdown.classList.add('select-hide');
+        }
+    }
+});
 
 /* -------- STYLING & AVENZA COMPATIBILITY ENGINE -------- */
 
@@ -406,12 +484,6 @@ async function bootstrapGISWorkspace(){
     })
   });
 
-//   map.on('pointermove', function(evt){
-//     const lonLat = evt.coordinate;
-//     document.getElementById('coords-bar').textContent = `${lonLat[1].toFixed(5)}°N , ${lonLat[0].toFixed(5)}°E`;
-//   });
-
-
 // Ensure this runs once after OpenLayers and proj4 are loaded
     proj4.defs("EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs");
     ol.proj.proj4.register(proj4);
@@ -473,10 +545,6 @@ async function handleRasterCacheAndLoad(url) {
   }
 
   try {
-    // const tiffSource = new ol.source.GeoTIFF({ sources: [{ blob: blob }] });
-    // geotiffOverlayLayer = new ol.layer.WebGLTile({ source: tiffSource, zIndex: 1 });
-    // map.addLayer(geotiffOverlayLayer);
-
     const tiffSource = new ol.source.GeoTIFF({
       sources: [{ blob: blob }],
       interpolate: true
@@ -558,9 +626,6 @@ function switchTool(type){
     map.addInteraction(drawInteraction);
   }
 
-//   ['select','Point','LineString','Polygon'].forEach(id => {
-//     document.getElementById('tool-'+id).classList.toggle('active', id === type);
-//   });
 toggleActiveTool('tool-' + type);
 }
 
@@ -577,7 +642,12 @@ function handleFeatureSelectedEvent(feature){
   updateInspectorPanelUI(geomType);
 
   document.getElementById('s-label').value = feature.get('name') || feature.get('meta_label') || '';
-  document.getElementById('s-marker').value = feature.get('meta_marker') || 'icons/pins/red_pin_classic.png';
+  
+  // Custom Icon Selection Logic Update
+  const markerVal = feature.get('meta_marker') || 'icons/pins/red_pin_classic.png';
+  document.getElementById('s-marker').value = markerVal;
+  updateCustomSelectUI(markerVal);
+
   document.getElementById('s-fill').value = feature.get('meta_fill') || '#0099ff';
   document.getElementById('s-fill-op').value = feature.get('meta_fill_op') || 35;
   document.getElementById('s-stroke').value = feature.get('meta_stroke') || '#0055ff';
@@ -680,6 +750,27 @@ function removeSelectedFeature(){
   document.getElementById('editor-placeholder').style.display = 'block';
   rebuildFeatureTreeUI();
 }
+
+// Function to trigger the undo
+function undoLastPoint() {
+  // Check if drawInteraction is active and drawing
+  if (typeof drawInteraction !== 'undefined' && drawInteraction.getActive()) {
+    drawInteraction.removeLastPoint();
+  }
+}
+
+// 1. Hook up the button
+// document.getElementById('undo-btn').addEventListener('click', undoLastPoint);
+
+// 2. Hook up Ctrl+Z (and Cmd+Z for Mac support)
+document.addEventListener('keydown', (event) => {
+  // Check if the user is pressing Ctrl/Cmd + Z
+  if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+    // Prevent the browser's default "Undo" behavior if they are typing in an input
+    event.preventDefault();
+    undoLastPoint();
+  }
+});
 
 function getUTM(){
     toggleActiveTool('tool-GetUTM');
@@ -795,7 +886,7 @@ function escapeXml(unsafe) {
   });
 }
 
-function convertToKmlColor(hex, opacityPercent) {
+function convertToKmlColorold(hex, opacityPercent) {
   if (!hex || hex.charAt(0) !== '#') hex = '#0099ff';
   const r = hex.slice(1, 3);
   const g = hex.slice(3, 5);
@@ -805,20 +896,29 @@ function convertToKmlColor(hex, opacityPercent) {
   return (a + b + g + r).toLowerCase();
 }
 
-// AVENZA TARGET INTERCEPTOR: Translates local display URLs to standard Google CDN strings that Avenza maps directly to internal offline classic shapes
-function generateCustomKML(features) {
+// Helper to convert HEX/Opacity to KML ABGR format (Alpha, Blue, Green, Red)
+function convertToKmlColor(hex, opacity) {
+  hex = hex.replace('#', '');
+  const r = hex.substring(0, 2);
+  const g = hex.substring(2, 4);
+  const b = hex.substring(4, 6);
+  // Convert 0-100 opacity to 00-FF hex
+  const a = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0');
+  return `${a}${b}${g}${r}`.toUpperCase();
+}
 
-    let layerName = prompt('Enter layer name:');
+// AVENZA TARGET INTERCEPTOR: Translates local display URLs to standard Google CDN strings that Avenza maps directly to internal offline classic shapes
+function generateCustomKMLold(features) {
+
+  let layerName = prompt('Enter layer name:');
   const PIN_MAP = {
-    'icons/pins/red_pin_classic.png': 'icons/red_pin_classic.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
-    'icons/pins/blue_pin_classic.png': 'icons/blue_pin_classic.png',
-    'icons/pins/yellow_pin_classic.png': 'icons/yellow_pin_classic.png',
-    'icons/pins/green_pin_classic.png': 'icons/green_pin_classic.png',
-    'icons/pins/orange_pin_classic.png': 'icons/orange_pin_classic.png',
-    'icons/pins/pink_pin_classic.png': 'icons/pink_pin_classic.png',
-    'icons/pins/purple_pin_classic.png': 'icons/purple_pin_classic.png',
-    'icons/pins/teal_pin_classic.png': 'icons/teal_pin_classic.png',
-    'icons/pins/gray_pin_classic.png': 'icons/gray_pin_classic.png'
+    'icons/pins/red_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-red-inground.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
+    'icons/pins/blue_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-blue-inground.png',
+    'icons/pins/yellow_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-yellow-inground.png',
+    'icons/pins/green_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-green-inground.png',
+    'icons/pins/orange_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-orange-inground.png',
+    'icons/pins/purple_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-purple-inground.png',
+    'icons/pins/alert.png': 'http://download.avenza.com/images/pdfmaps_icons/Alert.png'
   };
 
   let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -848,7 +948,7 @@ function generateCustomKML(features) {
       kml += `      <IconStyle>\n`;
       kml += `        <scale>0.5</scale>\n`;
       kml += `        <Icon><href>${exportMarker}</href></Icon>\n`;
-      kml += `        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>\n`;
+      kml += `        <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\n`;
       kml += `      </IconStyle>\n`;
     }
     if (type === 'LineString' || type === 'Polygon') {
@@ -904,6 +1004,111 @@ function generateCustomKML(features) {
   return kml;
 }
 
+// Helper to sanitize text for XML
+function escapeXml(unsafe) {
+  return unsafe.replace(/[<>&'"]/g, c => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
+}
+
+
+function generateCustomKML(features) {
+  let layerName = prompt('Enter layer name:') || 'GIS Workspace';
+  
+  // Mapping local icons to Avenza-friendly URLs
+  const PIN_MAP = {
+    'icons/pins/red_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-red-inground.png',
+    'icons/pins/blue_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-blue-inground.png',
+    'icons/pins/yellow_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-yellow-inground.png',
+    'icons/pins/green_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-green-inground.png',
+    'icons/pins/orange_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-orange-inground.png',
+    'icons/pins/purple_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-purple-inground.png',
+    'icons/pins/alert.png': 'http://download.avenza.com/images/pdfmaps_icons/Alert.png'
+  };
+
+  let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  kml += `<kml xmlns="http://www.opengis.net/kml/2.2">\n`;
+  kml += `  <Document>\n`;
+  kml += `    <name>${escapeXml(layerName)}</name>\n`;
+
+  features.forEach((feat, index) => {
+    const geom = feat.getGeometry();
+    if (!geom) return;
+    const type = geom.getType();
+    const name = feat.get('name') || `Feature ${index + 1}`;
+    
+    // Retrieve metadata (using defaults if empty)
+    const localMarker = feat.get('meta_marker') || 'icons/pins/red_pin_classic.png';
+    const exportMarker = PIN_MAP[localMarker] || localMarker;
+    const fill = feat.get('meta_fill') || '#0099ff';
+    const fillOp = feat.get('meta_fill_op') ?? 35;
+    const stroke = feat.get('meta_stroke') || '#0055ff';
+    const strokeW = feat.get('meta_stroke_w') ?? 2;
+
+    const styleId = `style_${feat.get('uid') || index}`;
+    
+    // --- 1. Define Style ---
+    kml += `    <Style id="${styleId}">\n`;
+    if (type === 'Point') {
+      kml += `      <IconStyle>\n`;
+      kml += `        <scale>0.5</scale>\n`;
+      kml += `        <Icon><href>${exportMarker}</href></Icon>\n`;
+      kml += `        <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\n`;
+      kml += `      </IconStyle>\n`;
+    } else {
+      kml += `      <LineStyle>\n`;
+      kml += `        <color>${convertToKmlColor(stroke, 100)}</color>\n`;
+      kml += `        <width>${strokeW}</width>\n`;
+      kml += `      </LineStyle>\n`;
+      if (type === 'Polygon') {
+        kml += `      <PolyStyle>\n`;
+        kml += `        <color>${convertToKmlColor(fill, fillOp)}</color>\n`;
+        kml += `        <fill>1</fill>\n`;
+        kml += `        <outline>1</outline>\n`;
+        kml += `      </PolyStyle>\n`;
+      }
+    }
+    kml += `    </Style>\n`;
+
+    // --- 2. Write Placemark & ExtendedData ---
+    kml += `    <Placemark>\n`;
+    kml += `      <name>${escapeXml(name)}</name>\n`;
+    kml += `      <styleUrl>#${styleId}</styleUrl>\n`;
+    
+    // Save metadata so it can be read back during import
+    kml += `      <ExtendedData>\n`;
+    kml += `        <Data name="meta_marker"><value>${localMarker}</value></Data>\n`;
+    kml += `        <Data name="meta_fill"><value>${fill}</value></Data>\n`;
+    kml += `        <Data name="meta_fill_op"><value>${fillOp}</value></Data>\n`;
+    kml += `        <Data name="meta_stroke"><value>${stroke}</value></Data>\n`;
+    kml += `        <Data name="meta_stroke_w"><value>${strokeW}</value></Data>\n`;
+    kml += `      </ExtendedData>\n`;
+
+    // Geometry coordinates
+    if (type === 'Point') {
+      const coords = geom.getCoordinates();
+      kml += `      <Point><coordinates>${coords[0]},${coords[1]},0</coordinates></Point>\n`;
+    } else if (type === 'LineString') {
+      const coords = geom.getCoordinates();
+      kml += `      <LineString><tessellate>1</tessellate><coordinates>${coords.map(c => `${c[0]},${c[1]},0`).join(' ')}</coordinates></LineString>\n`;
+    } else if (type === 'Polygon') {
+      kml += `      <Polygon><tessellate>1</tessellate>${geom.getCoordinates().map(ring => 
+        `<outerBoundaryIs><LinearRing><coordinates>${ring.map(c => `${c[0]},${c[1]},0`).join(' ')}</coordinates></LinearRing></outerBoundaryIs>`
+      ).join('')}</Polygon>\n`;
+    }
+    kml += `    </Placemark>\n`;
+  });
+
+  kml += `  </Document>\n</kml>\n`;
+  return kml;
+}
+
 async function handleFile(input){
   if(!input.files[0]) return;
   const file = input.files[0];
@@ -912,8 +1117,8 @@ async function handleFile(input){
   else displayNotification('Unsupported format');
 }
 
-async function parseAndLoadKMLString(kmlText) {
-  const format = new ol.format.KML({ extractStyles: false });
+async function parseAndLoadKMLStringold(kmlText) {
+  const format = new ol.format.KML({ extractStyles: true });
   const feats = format.readFeatures(kmlText, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:4326' });
 
   if (!feats.length) throw new Error("No features extracted");
@@ -935,6 +1140,59 @@ async function parseAndLoadKMLString(kmlText) {
       meta_fill: cfg.fill, meta_fill_op: cfg.fillOpacity,
       meta_stroke: cfg.stroke, meta_stroke_w: cfg.width
     });
+    feature.setStyle(compileFeatureStyle(cfg, false, geomType));
+    workspaceSource.addFeature(feature);
+  });
+
+  map.getView().fit(workspaceSource.getExtent(), { padding: [40, 40, 40, 40], duration: 700 });
+}
+
+// Add this helper function outside your main function
+function rgbaToHex(rgba) {
+  if (!rgba || typeof rgba !== 'string') return '#000000';
+  const match = rgba.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/);
+  if (!match) return '#000000';
+  const r = parseInt(match[1]).toString(16).padStart(2, '0');
+  const g = parseInt(match[2]).toString(16).padStart(2, '0');
+  const b = parseInt(match[3]).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`;
+}
+
+async function parseAndLoadKMLString(kmlText) {
+  // extractStyles is still useful for other apps (like Google Earth) to show the right colors
+  const format = new ol.format.KML({ extractStyles: true }); 
+  const feats = format.readFeatures(kmlText, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:4326' });
+
+  if (!feats.length) throw new Error("No features extracted");
+
+  feats.forEach(feature => {
+    trackingIdCounter++;
+    const geomType = feature.getGeometry().getType();
+    
+    // READ THE METADATA (ExtendedData is mapped to feature.get automatically)
+    // If it's a foreign KML file, it will fall back to defaults
+    const cfg = {
+      text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
+      marker: feature.get('meta_marker') || 'icons/pins/yellow_pin_classic.png',
+      fill: feature.get('meta_fill') || '#00d4aa',
+      fillOpacity: parseInt(feature.get('meta_fill_op')) || 30,
+      stroke: feature.get('meta_stroke') || '#00ffaa',
+      width: parseInt(feature.get('meta_stroke_w')) || 2
+    };
+    
+    // Apply properties so the Inspector works correctly
+    feature.setProperties({
+      uid: trackingIdCounter,
+      name: cfg.text,
+      meta_label: cfg.text,
+      meta_marker: cfg.marker,
+      meta_fill: cfg.fill,
+      meta_fill_op: cfg.fillOpacity,
+      meta_stroke: cfg.stroke,
+      meta_stroke_w: cfg.width
+    });
+
+    // Re-compile style using your engine
     feature.setStyle(compileFeatureStyle(cfg, false, geomType));
     workspaceSource.addFeature(feature);
   });
