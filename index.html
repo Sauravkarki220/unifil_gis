@@ -64,6 +64,8 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 
 #feature-editor-panel{ display:none; margin-top:8px; background:var(--panel2); padding:10px; border-radius:var(--radius); border:1px solid var(--border2); }
 #feature-editor-panel.active{ display:block; }
+#route-manager-panel{ display:none; margin-top:8px; background:var(--panel2); padding:10px; border-radius:var(--radius); border:1px solid var(--border2); }
+#route-manager-panel.active{ display:block; }
 
 #features-list{ display:flex; flex-direction:column; gap:4px; flex-grow:1; overflow-y:auto; }
 .feat-item{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:var(--panel2); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; }
@@ -85,7 +87,6 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 #toast.show{ opacity:1; }
 #coords-bar{ position:absolute; bottom:0; right:0; background:rgba(13,15,18,.85); font-family:var(--mono); font-size:11px; color:var(--text2); padding:4px 10px; z-index:10;}
 
-/* Custom Icon Dropdown Styles */
 .custom-select { position: relative; flex: 1; user-select: none; }
 .select-selected { 
   background: var(--panel2); border: 1px solid var(--border); 
@@ -125,7 +126,6 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
     <span class="dev-rank">T/CAPT. SAURAV KARKI</span>
     <span class="dev-post">EDP CHIEF</span>
   </div>
-
 </div>
 
 <div id="main">
@@ -146,6 +146,9 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
           <button class="btn active" id="tool-select" onclick="switchTool('select')">
             <svg viewBox="0 0 24 24"><path d="M5 3l14 9-7 1-4 7z"/></svg> Select & Edit
           </button>
+          <button class="btn" id="tool-Route" onclick="switchTool('Route')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18l5-7 4 4 9-11"/></svg> Route
+          </button>
           <button class="btn" id="tool-Point" onclick="switchTool('Point')">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg> Marker
           </button>
@@ -155,94 +158,75 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
           <button class="btn" id="tool-Polygon" onclick="switchTool('Polygon')">
             <svg viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg> Polygon
           </button>
-
           <button class="btn" id="tool-GetUTM" onclick="getUTM()">
-            <svg viewBox="0 0 24 30" width="20" height="25" style="fill: currentColor;">
-                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
-                <polygon points="12 30 8 20 16 20" />
-            </svg> 
-            Get UTM
-            </button>
-
-            <button class="btn" id="tool-ShowUTM" onclick="showUTM()">
-            <svg viewBox="0 0 24 24" width="20" height="20" style="fill: none; stroke: currentColor; stroke-width: 2;">
-                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
-                <line x1="12" y1="7" x2="12" y2="17" />
-                <line x1="7" y1="12" x2="17" y2="12" />
-            </svg>
-            Show UTM
-            </button>
+            <svg viewBox="0 0 24 30" width="20" height="25" style="fill: currentColor;"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" /><polygon points="12 30 8 20 16 20" /></svg> Get UTM
+          </button>
+          <button class="btn" id="tool-ShowUTM" onclick="showUTM()">
+            <svg viewBox="0 0 24 24" width="20" height="20; fill: none; stroke: currentColor; stroke-width: 2;"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" /><line x1="12" y1="7" x2="12" y2="17" /><line x1="7" y1="12" x2="17" y2="12" /></svg> Show UTM
+          </button>
         </div>
       </div>
 
       <div class="section">
         <div class="section-title" id="style-title">Shape Inspector & Styling</div>
+        
+        <div id="route-manager-panel">
+          <div style="font-size:11px; color:var(--text2); margin-bottom:8px; line-height:1.4;">
+            Route Mode Active. Dynamic waypoint clicks will not show up as permanent map elements.
+          </div>
+          <div class="style-row">
+            <span class="style-label">Waypoints</span>
+            <input type="text" id="route-count-display" value="0 points" readonly style="text-align:center; font-family:var(--mono);">
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn btn-full" onclick="undoLastRouteWaypoint()">Undo Waypoint</button>
+            <button class="btn danger btn-full" onclick="clearCurrentRouteContext()">Reset Route</button>
+          </div>
+        </div>
+
         <div id="feature-editor-panel">
-          
           <div class="style-row">
             <span class="style-label">Name</span>
             <input type="text" id="s-label" placeholder="Avenza Label Name..." oninput="pushStyleUpdate()">
           </div>
-
           <div class="style-row" id="row-marker" style="display:none;">
             <span class="style-label">Icon Pin</span>
-            
             <div class="custom-select" id="custom-icon-select">
               <div class="select-selected" onclick="toggleIconDropdown()">
                 <img id="selected-icon-img" src="icons/pins/red_pin_classic.png" alt="pin">
                 <span id="selected-icon-text">Red Pin</span>
               </div>
-              
               <div class="select-items select-hide" id="icon-dropdown-items">
-                <div onclick="selectIcon('icons/pins/red_pin_classic.png', 'Red Pin')">
-                  <img src="icons/pins/red_pin_classic.png"> Red Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/blue_pin_classic.png', 'Blue Pin')">
-                  <img src="icons/pins/blue_pin_classic.png"> Blue Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/yellow_pin_classic.png', 'Yellow Pin')">
-                  <img src="icons/pins/yellow_pin_classic.png"> Yellow Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/green_pin_classic.png', 'Green Pin')">
-                  <img src="icons/pins/green_pin_classic.png"> Green Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/orange_pin_classic.png', 'Orange Pin')">
-                  <img src="icons/pins/orange_pin_classic.png"> Orange Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/purple_pin_classic.png', 'Purple Pin')">
-                  <img src="icons/pins/purple_pin_classic.png"> Purple Pin
-                </div>
-                <div onclick="selectIcon('icons/pins/alert.png', 'Alert')">
-                  <img src="icons/pins/alert.png"> Alert
-                </div>
+                <div onclick="selectIcon('icons/pins/red_pin_classic.png', 'Red Pin')"><img src="icons/pins/red_pin_classic.png"> Red Pin</div>
+                <div onclick="selectIcon('icons/pins/blue_pin_classic.png', 'Blue Pin')"><img src="icons/pins/blue_pin_classic.png"> Blue Pin</div>
+                <div onclick="selectIcon('icons/pins/yellow_pin_classic.png', 'Yellow Pin')"><img src="icons/pins/yellow_pin_classic.png"> Yellow Pin</div>
+                <div onclick="selectIcon('icons/pins/green_pin_classic.png', 'Green Pin')"><img src="icons/pins/green_pin_classic.png"> Green Pin</div>
+                <div onclick="selectIcon('icons/pins/orange_pin_classic.png', 'Orange Pin')"><img src="icons/pins/orange_pin_classic.png"> Orange Pin</div>
+                <div onclick="selectIcon('icons/pins/purple_pin_classic.png', 'Purple Pin')"><img src="icons/pins/purple_pin_classic.png"> Purple Pin</div>
+                <div onclick="selectIcon('icons/pins/alert.png', 'Alert')"><img src="icons/pins/alert.png"> Alert</div>
               </div>
             </div>
-            
             <input type="hidden" id="s-marker" value="icons/pins/red_pin_classic.png">
           </div>
-
           <div class="style-row" id="row-fill">
             <span class="style-label">Fill Color</span>
             <input type="color" id="s-fill" value="#0099ff" oninput="pushStyleUpdate()">
           </div>
-          
           <div class="style-row" id="row-fill-op">
             <span class="style-label">Opacity</span>
             <input type="range" id="s-fill-op" min="0" max="100" value="100" oninput="pushStyleUpdate()">
           </div>
-          
           <div class="style-row" id="row-stroke">
             <span class="style-label">Line Color</span>
             <input type="color" id="s-stroke" value="#0055ff" oninput="pushStyleUpdate()">
           </div>
-          
           <div class="style-row" id="row-stroke-w">
             <span class="style-label">Line Width</span>
             <input type="number" id="s-stroke-w" value="4" min="1" max="6" oninput="pushStyleUpdate()">
           </div>
-
           <button class="btn danger btn-full" style="margin-top:8px;" onclick="removeSelectedFeature()">Delete Shape</button>
         </div>
+        
         <div id="editor-placeholder" style="color:var(--text3); font-size:11px; text-align:center; padding:10px 0;">
           Select a shape on the map to rename and style it.
         </div>
@@ -261,15 +245,16 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 
   <div id="map-wrap">
     <div id="map"></div>
-    <dialog id="utmModal" style="padding: 20px; border-radius: 8px; border: 1px solid #ccc;">
-        <h2 style="text-align: center;">UTM</h2>
+    <dialog id="utmModal" style="padding: 20px; border-radius: 8px; border: 1px solid #ccc; background: var(--panel); color: var(--text); border-color: var(--border);">
+        <h2 style="text-align: center; font-size:14px; font-family:var(--mono);">UTM COORDINATE</h2>
         <br>
-        <h3 id="utmDisplay" style="text-align: center;"></h3>
-            <br>
-        <button onclick="copyToClipboard()">Copy to Clipboard</button>
-        <button onclick="document.getElementById('utmModal').close()">Close</button>
+        <h3 id="utmDisplay" style="text-align: center; font-family:var(--mono); color:var(--accent);"></h3>
+        <br>
+        <div style="display:flex; gap:8px;">
+          <button class="btn primary" onclick="copyToClipboard()">Copy</button>
+          <button class="btn" onclick="document.getElementById('utmModal').close()">Close</button>
+        </div>
     </dialog>
-    
     <div id="toast"></div>
     <div id="coords-bar">---</div>
   </div>
@@ -282,24 +267,24 @@ body{ font-family:var(--font); background:var(--bg); color:var(--text); height:1
 <script src="./js/proj4.js"></script>
 
 <script>
-    document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         if (drawInteraction && drawInteraction.getActive()) {
             drawInteraction.abortDrawing();
-            
-            // Optional: reset your UI buttons
-            const drawBtn = document.getElementById('draw-toggle-button');
-            if(drawBtn) drawBtn.classList.remove('active');
         }
     }
 });
-</script>
 
-<script>
 let map, geotiffOverlayLayer, drawInteraction, selectInteraction, modifyInteraction;
 let workspaceSource, workspaceLayer;
 let targetSelectedFeature = null;
 let trackingIdCounter = 0;
+
+// Dynamic Routing System Layers (Isolated from Workspace Layer)
+let routeTransientSource, routeTransientLayer;
+let routeWaypoints = [];
+let lastRouteFeature = null;
+let routeClickListener = null;
 
 const DB_NAME = 'UNIFIL_GIS_CACHE';
 const STORE_NAME = 'rasters';
@@ -364,14 +349,10 @@ function toggleIconDropdown() {
 }
 
 function selectIcon(val, text) {
-    // 1. Update the hidden input
     document.getElementById('s-marker').value = val;
-    // 2. Update the visual display
     document.getElementById('selected-icon-img').src = val;
     document.getElementById('selected-icon-text').textContent = text;
-    // 3. Hide the dropdown
     document.getElementById('icon-dropdown-items').classList.add('select-hide');
-    // 4. Push the style to the map immediately
     pushStyleUpdate(); 
 }
 
@@ -388,7 +369,6 @@ function updateCustomSelectUI(val) {
     document.getElementById('selected-icon-text').textContent = labelMap[val] || 'Pin';
 }
 
-// Close dropdown if the user clicks anywhere outside of it
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.custom-select')) {
         const dropdown = document.getElementById('icon-dropdown-items');
@@ -399,7 +379,6 @@ document.addEventListener('click', function(e) {
 });
 
 /* -------- STYLING & AVENZA COMPATIBILITY ENGINE -------- */
-
 function readStyleForm(){
   return {
     text: document.getElementById('s-label').value.trim(),
@@ -411,6 +390,7 @@ function readStyleForm(){
   };
 }
 
+// Fixed color handling for transparency conversions
 function convertHexToRgba(hex, a){
   if (!hex || typeof hex !== 'string') hex = '#0099ff';
   const r=parseInt(hex.slice(1,3),16);
@@ -420,24 +400,26 @@ function convertHexToRgba(hex, a){
 }
 
 function updateInspectorPanelUI(geomType) {
+  if (document.getElementById('tool-Route').classList.contains('active')) {
+    document.getElementById('feature-editor-panel').classList.remove('active');
+    return;
+  }
   document.getElementById('row-marker').style.display = (geomType === 'Point') ? 'flex' : 'none';
   document.getElementById('row-fill').style.display = (geomType === 'Polygon') ? 'flex' : 'none';
-  document.getElementById('row-fill-op').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none'; // Keep flexibility for handles if ever extended
+  document.getElementById('row-fill-op').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none'; 
   document.getElementById('row-stroke').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none';
   document.getElementById('row-stroke-w').style.display = (geomType === 'Polygon' || geomType === 'LineString') ? 'flex' : 'none';
 }
 
 function compileFeatureStyle(config, selected, geomType){
   const strokeColor = selected ? '#ffaa00' : config.stroke;
-  
   let imageStyle;
   if (geomType === 'Point') {
     imageStyle = new ol.style.Icon({
       src: config.marker || 'icons/pins/red_pin_classic.png',
       anchor: [0.5, 1], 
       anchorXUnits: 'fraction', anchorYUnits: 'fraction',
-    //   scale: selected ? 0.65 : 0.5
-    scale: selected ? 0.35 : 0.25
+      scale: selected ? 0.35 : 0.25
     });
   } else {
     imageStyle = new ol.style.Circle({
@@ -448,13 +430,8 @@ function compileFeatureStyle(config, selected, geomType){
   }
 
   return new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: convertHexToRgba(config.fill, config.fillOpacity)
-    }),
-    stroke: new ol.style.Stroke({
-      color: strokeColor,
-      width: config.width
-    }),
+    fill: new ol.style.Fill({ color: convertHexToRgba(config.fill, config.fillOpacity) }),
+    stroke: new ol.style.Stroke({ color: strokeColor, width: config.width }),
     image: imageStyle,
     text: new ol.style.Text({
       text: config.text || '',
@@ -467,40 +444,46 @@ function compileFeatureStyle(config, selected, geomType){
 }
 
 /* -------- MAP INITIALIZATION -------- */
-
 async function bootstrapGISWorkspace(){
   updateSplashStatus("Assembling Vector Viewports...");
   
   workspaceSource = new ol.source.Vector();
   workspaceLayer = new ol.layer.Vector({ source: workspaceSource, zIndex: 10 });
 
-  map = new ol.Map({
-    target: 'map',
-    layers: [workspaceLayer],
-    view: new ol.View({
-      projection: 'EPSG:4326', 
-      center: [35.50, 33.20],
-      zoom: 10
+  routeTransientSource = new ol.source.Vector();
+  routeTransientLayer = new ol.layer.Vector({
+    source: routeTransientSource,
+    zIndex: 11,
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({ color: '#0099ff' }),
+        stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+      })
     })
   });
 
-// Ensure this runs once after OpenLayers and proj4 are loaded
-    proj4.defs("EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs");
-    ol.proj.proj4.register(proj4);
+  map = new ol.Map({
+    target: 'map',
+    layers: [workspaceLayer, routeTransientLayer],
+    view: new ol.View({
+      projection: 'EPSG:4326', 
+      center: [35.5222, 33.2335], 
+      zoom: 14
+    })
+  });
 
-    map.on('pointermove', function(evt) {
-        // evt.coordinate is already [Longitude, Latitude] because projection is 'EPSG:4326'
-        const coordinate = evt.coordinate;
-        
-        // Transform from EPSG:4326 (Lat/Lon) to UTM Zone 36N (EPSG:32636)
-        const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
-        
-        const bar = document.getElementById('coords-bar');
-        if (bar) {
-            bar.textContent = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
-        }
-    });
+  proj4.defs("EPSG:32636", "+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs");
+  ol.proj.proj4.register(proj4);
 
+  map.on('pointermove', function(evt) {
+      const coordinate = evt.coordinate;
+      const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
+      const bar = document.getElementById('coords-bar');
+      if (bar) {
+          bar.textContent = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
+      }
+  });
 
   selectInteraction = new ol.interaction.Select();
   modifyInteraction = new ol.interaction.Modify({ features: selectInteraction.getFeatures() });
@@ -550,18 +533,13 @@ async function handleRasterCacheAndLoad(url) {
       interpolate: true
     });
 
-    geotiffOverlayLayer = new ol.layer.WebGLTile({
-      source: tiffSource,
-      zIndex: 1
-    });
-
+    geotiffOverlayLayer = new ol.layer.WebGLTile({ source: tiffSource, zIndex: 1 });
     map.addLayer(geotiffOverlayLayer);
     
     const viewConfig = await tiffSource.getView();
     if(viewConfig) {
       viewConfig.projection = 'EPSG:4326';
-      // map.setView(new ol.View(viewConfig));
-      map.setView(new ol.View({ // modified by EDP CHIED
+      map.setView(new ol.View({ 
         projection: viewConfig.projection,
         center: viewConfig.center,
         zoom: 13,
@@ -575,7 +553,6 @@ async function handleRasterCacheAndLoad(url) {
     if (!isFromCache) await writeMapBlobToCache(blob).catch(e => console.warn(e));
     dismissSplashScreen();
     displayNotification('Raster Initialized');
-
   } catch (err) {
     if (isFromCache) {
       await purgeCacheEntry();
@@ -586,20 +563,45 @@ async function handleRasterCacheAndLoad(url) {
   }
 }
 
-/* -------- VECTOR DRAWING & EDITING -------- */
-
+/* -------- TOOL CONTROL DISPATCHER -------- */
 function switchTool(type){
   if(drawInteraction) { map.removeInteraction(drawInteraction); drawInteraction = null; }
+  
+  if(routeClickListener) {
+    ol.Observable.unByKey(routeClickListener);
+    routeClickListener = null;
+  }
+
+  routeWaypoints = [];
+  routeTransientSource.clear();
+  lastRouteFeature = null;
 
   if(type === 'select'){
     selectInteraction.setActive(true);
     modifyInteraction.setActive(true);
+    document.getElementById('route-manager-panel').classList.remove('active');
+    document.getElementById('feature-editor-panel').classList.remove('active');
+    document.getElementById('editor-placeholder').style.display = 'block';
+  } else if(type === 'Route') {
+    selectInteraction.setActive(false);
+    modifyInteraction.setActive(false);
+    
+    document.getElementById('feature-editor-panel').classList.remove('active');
+    document.getElementById('editor-placeholder').style.display = 'none';
+    document.getElementById('route-manager-panel').classList.add('active');
+    document.getElementById('route-count-display').value = "0 points";
+
+    displayNotification('Route Tool: Click map to trace path');
+    routeClickListener = map.on('singleclick', handleRouteClick);
   } else {
     selectInteraction.setActive(false);
     modifyInteraction.setActive(false);
+    document.getElementById('route-manager-panel').classList.remove('active');
+    document.getElementById('editor-placeholder').style.display = 'none';
+    document.getElementById('feature-editor-panel').classList.add('active');
+    updateInspectorPanelUI(type);
 
     drawInteraction = new ol.interaction.Draw({ source: workspaceSource, type: type });
-
     drawInteraction.on('drawend', function(evt){
       trackingIdCounter++;
       const geomType = evt.feature.getGeometry().getType();
@@ -625,11 +627,181 @@ function switchTool(type){
     });
     map.addInteraction(drawInteraction);
   }
-
-toggleActiveTool('tool-' + type);
+  toggleActiveTool('tool-' + type);
 }
 
+/* -------- NON-POLLUTING ROUTING ENGINE -------- */
+function handleRouteClick(evt) {
+  const coordinate = evt.coordinate;
+  const cleanLonLat = [
+    parseFloat(coordinate[0].toFixed(5)),
+    parseFloat(coordinate[1].toFixed(5))
+  ];
+  
+  routeWaypoints.push(cleanLonLat);
+  document.getElementById('route-count-display').value = `${routeWaypoints.length} points`;
+
+  renderRouteWaypoints();
+  
+  if (routeWaypoints.length >= 2) {
+    executeRouteCalculation();
+  } else {
+    displayNotification('First waypoint placed.');
+  }
+}
+
+function renderRouteWaypoints() {
+  routeTransientSource.clear(); 
+  routeWaypoints.forEach(wp => {
+    const transientDot = new ol.Feature({
+      geometry: new ol.geom.Point(wp)
+    });
+    routeTransientSource.addFeature(transientDot);
+  });
+}
+
+/* -------- OPTIMIZED ROUTING ENGINE & SNAP RESOLUTION -------- */
+function executeRouteCalculation() {
+  const coordinatesString = routeWaypoints.map(c => `${c[0]},${c[1]}`).join(';');
+  
+  // Forces OSRM to search in a wider 250-meter radius around clicks to hook major arterial roads / E-roads
+  const radiusTolerance = 250; 
+  const radiusesString = routeWaypoints.map(() => radiusTolerance).join(';');
+
+  const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordinatesString}?overview=full&geometries=geojson&radiuses=${radiusesString}`;
+  
+  fetch(osrmUrl)
+    .then(response => response.json())
+    .then(data => {
+      // Catch topology network disconnects or private tags inside OpenStreetMap database
+      if (data.code !== 'Ok') {
+        console.warn("OSRM network topology broken at this node. Falling back to straight-line connection.");
+        generateStraightLineFallback();
+        return;
+      }
+      
+      const routeGeoJSON = data.routes[0].geometry;
+      const routeFeature = new ol.format.GeoJSON().readFeature(routeGeoJSON, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:4326'
+      });
+      
+      if (!lastRouteFeature) {
+        trackingIdCounter++;
+      }
+      
+      const distanceKm = (data.routes[0].distance / 1000).toFixed(2);
+      const routeName = `Route (${distanceKm} km)`;
+      
+      routeFeature.setProperties({
+        uid: lastRouteFeature ? lastRouteFeature.get('uid') : trackingIdCounter,
+        name: routeName,
+        meta_label: routeName,
+        meta_marker: 'icons/pins/red_pin_classic.png',
+        meta_fill: '#0099ff',
+        meta_fill_op: 35,
+        meta_stroke: '#0055ff', 
+        meta_stroke_w: 4
+      });
+      
+      routeFeature.setStyle(compileFeatureStyle({
+        text: routeName, marker: 'icons/pins/red_pin_classic.png',
+        fill: '#0099ff', fillOpacity: 35,
+        stroke: '#0055ff', width: 4
+      }, false, 'LineString'));
+      
+      if (lastRouteFeature) {
+        workspaceSource.removeFeature(lastRouteFeature);
+      }
+      
+      lastRouteFeature = routeFeature;
+      workspaceSource.addFeature(routeFeature);
+    })
+    .catch(err => {
+      console.error(err);
+      generateStraightLineFallback();
+    });
+}
+
+/* -------- ABSOLUTE GEOMETRIC FALLBACK -------- */
+function generateStraightLineFallback() {
+  if (routeWaypoints.length < 2) return;
+  
+  const lineGeo = new ol.geom.LineString(routeWaypoints);
+  const routeFeature = new ol.Feature({ geometry: lineGeo });
+  
+  if (!lastRouteFeature) {
+    trackingIdCounter++;
+  }
+  
+  const lengthDeg = lineGeo.getLength();
+  const approxKm = (lengthDeg * 111.32).toFixed(2); 
+  const routeName = `Route (Manual Trace: ${approxKm} km)`;
+  
+  routeFeature.setProperties({
+    uid: lastRouteFeature ? lastRouteFeature.get('uid') : trackingIdCounter,
+    name: routeName,
+    meta_label: routeName,
+    meta_marker: 'icons/pins/red_pin_classic.png',
+    meta_fill: '#0099ff',
+    meta_fill_op: 35,
+    meta_stroke: '#ff9900', // Highlights orange to inform user it is a manual connection segment
+    meta_stroke_w: 4
+  });
+  
+  routeFeature.setStyle(compileFeatureStyle({
+    text: routeName, marker: 'icons/pins/red_pin_classic.png',
+    fill: '#0099ff', fillOpacity: 35,
+    stroke: '#ff9900', width: 4
+  }, false, 'LineString'));
+  
+  if (lastRouteFeature) {
+    workspaceSource.removeFeature(lastRouteFeature);
+  }
+  
+  lastRouteFeature = routeFeature;
+  workspaceSource.addFeature(routeFeature);
+  displayNotification('Notice: Connected via manual straight line due to road restrictions.');
+}
+
+/* -------- ROUTE UNDO & RESET CONTROLS -------- */
+function undoLastRouteWaypoint() {
+  if (routeWaypoints.length === 0) return;
+  
+  routeWaypoints.pop();
+  document.getElementById('route-count-display').value = `${routeWaypoints.length} points`;
+
+  renderRouteWaypoints();
+
+  if (routeWaypoints.length >= 2) {
+    executeRouteCalculation();
+  } else {
+    if (lastRouteFeature) {
+      workspaceSource.removeFeature(lastRouteFeature);
+      lastRouteFeature = null;
+    }
+    displayNotification(routeWaypoints.length === 1 ? 'Waypoint undone.' : 'Cleared routing sequence.');
+  }
+}
+
+function clearCurrentRouteContext() {
+  routeWaypoints = [];
+  routeTransientSource.clear(); 
+  if (lastRouteFeature) {
+    workspaceSource.removeFeature(lastRouteFeature);
+    lastRouteFeature = null;
+  }
+  document.getElementById('route-count-display').value = "0 points";
+  displayNotification('Route reset successfully.');
+}
+
+/* -------- INSPECTOR PANEL CORE LOGIC -------- */
 function handleFeatureSelectedEvent(feature){
+  if (document.getElementById('tool-Route').classList.contains('active')) {
+    selectInteraction.getFeatures().clear();
+    return;
+  }
+
   if(targetSelectedFeature && targetSelectedFeature !== feature){
     clearSelectedInspectorContext(true); 
   }
@@ -638,12 +810,12 @@ function handleFeatureSelectedEvent(feature){
   const geomType = feature.getGeometry().getType();
   
   document.getElementById('editor-placeholder').style.display = 'none';
+  document.getElementById('route-manager-panel').classList.remove('active');
   document.getElementById('feature-editor-panel').classList.add('active');
   updateInspectorPanelUI(geomType);
 
   document.getElementById('s-label').value = feature.get('name') || feature.get('meta_label') || '';
   
-  // Custom Icon Selection Logic Update
   const markerVal = feature.get('meta_marker') || 'icons/pins/red_pin_classic.png';
   document.getElementById('s-marker').value = markerVal;
   updateCustomSelectUI(markerVal);
@@ -675,7 +847,11 @@ function clearSelectedInspectorContext(soft = false){
   if(!soft) {
     targetSelectedFeature = null;
     document.getElementById('feature-editor-panel').classList.remove('active');
-    document.getElementById('editor-placeholder').style.display = 'block';
+    if(document.getElementById('tool-Route').classList.contains('active')) {
+       document.getElementById('route-manager-panel').classList.add('active');
+    } else {
+       document.getElementById('editor-placeholder').style.display = 'block';
+    }
     rebuildFeatureTreeUI();
   }
 }
@@ -728,6 +904,7 @@ function rebuildFeatureTreeUI(){
     `;
 
     div.onclick = () => {
+      if (document.getElementById('tool-Route').classList.contains('active')) return;
       selectInteraction.getFeatures().clear();
       selectInteraction.getFeatures().push(feat);
       handleFeatureSelectedEvent(feat);
@@ -751,97 +928,73 @@ function removeSelectedFeature(){
   rebuildFeatureTreeUI();
 }
 
-// Function to trigger the undo
 function undoLastPoint() {
-  // Check if drawInteraction is active and drawing
   if (typeof drawInteraction !== 'undefined' && drawInteraction.getActive()) {
     drawInteraction.removeLastPoint();
   }
 }
 
-// 1. Hook up the button
-// document.getElementById('undo-btn').addEventListener('click', undoLastPoint);
-
-// 2. Hook up Ctrl+Z (and Cmd+Z for Mac support)
 document.addEventListener('keydown', (event) => {
-  // Check if the user is pressing Ctrl/Cmd + Z
   if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-    // Prevent the browser's default "Undo" behavior if they are typing in an input
     event.preventDefault();
-    undoLastPoint();
+    if(document.getElementById('tool-Route').classList.contains('active')) {
+      undoLastRouteWaypoint();
+    } else {
+      undoLastPoint();
+    }
   }
 });
 
+/* -------- UTM TOOLS -------- */
 function getUTM(){
     toggleActiveTool('tool-GetUTM');
+    let isCapturing = true;
+    map.getTargetElement().style.cursor = 'crosshair'; 
 
-    let isCapturing = false;
-
-    isCapturing = true;
-    map.getTargetElement().style.cursor = 'crosshair'; // Visual feedback
-
-    // Handle the capture
-    map.on('singleclick', function(evt) {
-    if (!isCapturing) return;
-
-    const coordinate = evt.coordinate; // Lat/Lon
-    const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
-    
-    const utmString = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
-    
-    // Display in modal
-    document.getElementById('utmDisplay').textContent = utmString;
-    document.getElementById('utmModal').showModal();
-    // console.log(utmString);
-    // Reset state
-    isCapturing = false;
-    map.getTargetElement().style.cursor = '';
+    map.once('singleclick', function(evt) {
+      if (!isCapturing) return;
+      const coordinate = evt.coordinate; 
+      const utmCoords = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:32636');
+      const utmString = `36N ${Math.round(utmCoords[0])} ${Math.round(utmCoords[1])}`;
+      
+      document.getElementById('utmDisplay').textContent = utmString;
+      document.getElementById('utmModal').showModal();
+      map.getTargetElement().style.cursor = '';
+      switchTool('select');
     });
 }
 
 function showUTM(){
     toggleActiveTool('tool-ShowUTM');
-
-    input = prompt('Enter the UTM coordinates in the format "36N 500000 4649776"');
+    let input = prompt('Enter the UTM coordinates in the format "36N 500000 4649776"');
+    if(!input) { switchTool('select'); return; }
+    
     const regex = /(\d+N)\s+(\d+)\s+(\d+)/i;
     const match = input.match(regex);
 
     if (!match) {
         alert("Format error! Please use: 36N 726668 3676948");
+        switchTool('select');
         return;
     }
 
-    const zone = match[1].toUpperCase(); // e.g., "36N"
+    const zone = match[1].toUpperCase(); 
     const easting = parseFloat(match[2]);
     const northing = parseFloat(match[3]);
-
-    // 1. Define projection for the zone (Dynamically registered if needed)
     const epsgCode = 'EPSG:326' + zone.replace('N', '');
     
     try {
-        // 2. Transform UTM -> EPSG:4326
         const lonLat = ol.proj.transform([easting, northing], epsgCode, 'EPSG:4326');
-        
-        // 3. Navigate
-        map.getView().animate({
-            center: lonLat,
-            zoom: 16,
-            duration: 800
-        });
-
-        // 4. Optional: Add a temporary marker
+        map.getView().animate({ center: lonLat, zoom: 16, duration: 800 });
         addTemporaryMarker(lonLat);
     } catch (e) {
         alert("Projection error: Ensure the zone is supported.");
     }
+    switchTool('select');
 }
 
 function addTemporaryMarker(lonLat) {
-    const feature = new ol.Feature({
-        geometry: new ol.geom.Point(lonLat)
-    });
-    
-    // Simple style for the jump-to marker
+    const feature = new ol.Feature({ geometry: new ol.geom.Point(lonLat) });
     feature.setStyle(new ol.style.Style({
         image: new ol.style.Circle({
             radius: 8,
@@ -849,30 +1002,25 @@ function addTemporaryMarker(lonLat) {
             stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
         })
     }));
-
     workspaceSource.addFeature(feature);
-    
-    // Auto-remove after 5 seconds
     setTimeout(() => workspaceSource.removeFeature(feature), 5000);
 }
 
 function copyToClipboard() {
     const text = document.getElementById('utmDisplay').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-        // alert("Copied to clipboard!");
-    });
+    navigator.clipboard.writeText(text).then(() => {});
     document.getElementById('utmModal').close();
 }
 
 function toggleActiveTool(toolId) {
-    const toolButtons = ['tool-select', 'tool-Point', 'tool-LineString', 'tool-Polygon', 'tool-GetUTM', 'tool-ShowUTM'];
+    const toolButtons = ['tool-select', 'tool-Route', 'tool-Point', 'tool-LineString', 'tool-Polygon', 'tool-GetUTM', 'tool-ShowUTM'];
     toolButtons.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.classList.toggle('active', id === toolId);
     });
 }
-/* -------- EXPORT & IMPORT ENGINE WITH CUSTOM SERIALIZER -------- */
 
+/* -------- EXPORT & IMPORT ENGINE WITH CUSTOM SERIALIZER -------- */
 function escapeXml(unsafe) {
   if (!unsafe) return '';
   return unsafe.toString().replace(/[<>&'"]/g, function (c) {
@@ -886,142 +1034,17 @@ function escapeXml(unsafe) {
   });
 }
 
-function convertToKmlColorold(hex, opacityPercent) {
-  if (!hex || hex.charAt(0) !== '#') hex = '#0099ff';
-  const r = hex.slice(1, 3);
-  const g = hex.slice(3, 5);
-  const b = hex.slice(5, 7);
-  const pct = opacityPercent !== undefined ? opacityPercent : 100;
-  const a = Math.round((pct / 100) * 255).toString(16).padStart(2, '0');
-  return (a + b + g + r).toLowerCase();
-}
-
-// Helper to convert HEX/Opacity to KML ABGR format (Alpha, Blue, Green, Red)
 function convertToKmlColor(hex, opacity) {
   hex = hex.replace('#', '');
   const r = hex.substring(0, 2);
   const g = hex.substring(2, 4);
   const b = hex.substring(4, 6);
-  // Convert 0-100 opacity to 00-FF hex
   const a = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0');
   return `${a}${b}${g}${r}`.toUpperCase();
 }
 
-// AVENZA TARGET INTERCEPTOR: Translates local display URLs to standard Google CDN strings that Avenza maps directly to internal offline classic shapes
-function generateCustomKMLold(features) {
-
-  let layerName = prompt('Enter layer name:');
-  const PIN_MAP = {
-    'icons/pins/red_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-red-inground.png', // This is the only one Avenza maps directly to a default shape, so we can keep it as is for simplicity
-    'icons/pins/blue_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-blue-inground.png',
-    'icons/pins/yellow_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-yellow-inground.png',
-    'icons/pins/green_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-green-inground.png',
-    'icons/pins/orange_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-orange-inground.png',
-    'icons/pins/purple_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-purple-inground.png',
-    'icons/pins/alert.png': 'http://download.avenza.com/images/pdfmaps_icons/Alert.png'
-  };
-
-  let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  kml += `<kml xmlns="http://www.opengis.net/kml/2.2">\n`;
-  kml += `  <Document>\n`;
-  kml += `    <name>${escapeXml(layerName)}</name>\n`;
-
-  features.forEach((feat, index) => {
-    const geom = feat.getGeometry();
-    if (!geom) return;
-    const type = geom.getType();
-    const name = feat.get('name') || `Feature ${index + 1}`;
-    
-    // Resolve localized source paths to structured KML links on generation
-    const localMarker = feat.get('meta_marker') || 'icons/pins/red_pin_classic.png';
-    const exportMarker = PIN_MAP[localMarker] || localMarker;
-
-    const fill = feat.get('meta_fill') || '#0099ff';
-    const fillOp = feat.get('meta_fill_op') !== undefined ? feat.get('meta_fill_op') : 35;
-    const stroke = feat.get('meta_stroke') || '#0055ff';
-    const strokeW = feat.get('meta_stroke_w') || 2;
-
-    const styleId = `style_${feat.get('uid') || index}`;
-    kml += `    <Style id="${styleId}">\n`;
-    
-    if (type === 'Point') {
-      kml += `      <IconStyle>\n`;
-      kml += `        <scale>0.5</scale>\n`;
-      kml += `        <Icon><href>${exportMarker}</href></Icon>\n`;
-      kml += `        <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\n`;
-      kml += `      </IconStyle>\n`;
-    }
-    if (type === 'LineString' || type === 'Polygon') {
-      kml += `      <LineStyle>\n`;
-      kml += `        <color>${convertToKmlColor(stroke, 100)}</color>\n`;
-      kml += `        <width>${strokeW}</width>\n`;
-      kml += `      </LineStyle>\n`;
-    }
-    if (type === 'Polygon') {
-      kml += `      <PolyStyle>\n`;
-      kml += `        <color>${convertToKmlColor(fill, fillOp)}</color>\n`;
-      kml += `        <fill>1</fill>\n`;
-      kml += `        <outline>1</outline>\n`;
-      kml += `      </PolyStyle>\n`;
-    }
-    kml += `    </Style>\n`;
-
-    kml += `    <Placemark>\n`;
-    kml += `      <name>${escapeXml(name)}</name>\n`;
-    kml += `      <styleUrl>#${styleId}</styleUrl>\n`;
-
-    if (type === 'Point') {
-      const coords = geom.getCoordinates();
-      kml += `      <Point>\n`;
-      kml += `        <coordinates>${coords[0]},${coords[1]},0</coordinates>\n`;
-      kml += `      </Point>\n`;
-    } else if (type === 'LineString') {
-      const coords = geom.getCoordinates();
-      const coordStr = coords.map(c => `${c[0]},${c[1]},0`).join(' ');
-      kml += `      <LineString>\n`;
-      kml += `        <tessellate>1</tessellate>\n`;
-      kml += `        <coordinates>${coordStr}</coordinates>\n`;
-      kml += `      </LineString>\n`;
-    } else if (type === 'Polygon') {
-      const rings = geom.getCoordinates();
-      kml += `      <Polygon>\n`;
-      kml += `        <tessellate>1</tessellate>\n`;
-      rings.forEach(ring => {
-        kml += `        <outerBoundaryIs>\n`;
-        kml += `          <LinearRing>\n`;
-        const coordStr = ring.map(c => `${c[0]},${c[1]},0`).join(' ');
-        kml += `            <coordinates>${coordStr}</coordinates>\n`;
-        kml += `          </LinearRing>\n`;
-        kml += `        </outerBoundaryIs>\n`;
-      });
-      kml += `      </Polygon>\n`;
-    }
-    kml += `    </Placemark>\n`;
-  });
-
-  kml += `  </Document>\n`;
-  kml += `</kml>\n`;
-  return kml;
-}
-
-// Helper to sanitize text for XML
-function escapeXml(unsafe) {
-  return unsafe.replace(/[<>&'"]/g, c => {
-    switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
-    }
-  });
-}
-
-
 function generateCustomKML(features) {
   let layerName = prompt('Enter layer name:') || 'GIS Workspace';
-  
-  // Mapping local icons to Avenza-friendly URLs
   const PIN_MAP = {
     'icons/pins/red_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-red-inground.png',
     'icons/pins/blue_pin_classic.png': 'http://download.avenza.com/images/pdfmaps_icons/pin-blue-inground.png',
@@ -1032,10 +1055,7 @@ function generateCustomKML(features) {
     'icons/pins/alert.png': 'http://download.avenza.com/images/pdfmaps_icons/Alert.png'
   };
 
-  let kml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  kml += `<kml xmlns="http://www.opengis.net/kml/2.2">\n`;
-  kml += `  <Document>\n`;
-  kml += `    <name>${escapeXml(layerName)}</name>\n`;
+  let kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <name>${escapeXml(layerName)}</name>\n`;
 
   features.forEach((feat, index) => {
     const geom = feat.getGeometry();
@@ -1043,54 +1063,26 @@ function generateCustomKML(features) {
     const type = geom.getType();
     const name = feat.get('name') || `Feature ${index + 1}`;
     
-    // Retrieve metadata (using defaults if empty)
     const localMarker = feat.get('meta_marker') || 'icons/pins/red_pin_classic.png';
     const exportMarker = PIN_MAP[localMarker] || localMarker;
     const fill = feat.get('meta_fill') || '#0099ff';
     const fillOp = feat.get('meta_fill_op') ?? 35;
     const stroke = feat.get('meta_stroke') || '#0055ff';
     const strokeW = feat.get('meta_stroke_w') ?? 2;
-
     const styleId = `style_${feat.get('uid') || index}`;
     
-    // --- 1. Define Style ---
     kml += `    <Style id="${styleId}">\n`;
     if (type === 'Point') {
-      kml += `      <IconStyle>\n`;
-      kml += `        <scale>0.5</scale>\n`;
-      kml += `        <Icon><href>${exportMarker}</href></Icon>\n`;
-      kml += `        <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>\n`;
-      kml += `      </IconStyle>\n`;
+      kml += `      <IconStyle><scale>0.5</scale><Icon><href>${exportMarker}</href></Icon><hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/></IconStyle>\n`;
     } else {
-      kml += `      <LineStyle>\n`;
-      kml += `        <color>${convertToKmlColor(stroke, 100)}</color>\n`;
-      kml += `        <width>${strokeW}</width>\n`;
-      kml += `      </LineStyle>\n`;
+      kml += `      <LineStyle><color>${convertToKmlColor(stroke, 100)}</color><width>${strokeW}</width></LineStyle>\n`;
       if (type === 'Polygon') {
-        kml += `      <PolyStyle>\n`;
-        kml += `        <color>${convertToKmlColor(fill, fillOp)}</color>\n`;
-        kml += `        <fill>1</fill>\n`;
-        kml += `        <outline>1</outline>\n`;
-        kml += `      </PolyStyle>\n`;
+        kml += `      <PolyStyle><color>${convertToKmlColor(fill, fillOp)}</color><fill>1</fill><outline>1</outline></PolyStyle>\n`;
       }
     }
-    kml += `    </Style>\n`;
+    kml += `    </Style>\n    <Placemark>\n      <name>${escapeXml(name)}</name>\n      <styleUrl>#${styleId}</styleUrl>\n`;
+    kml += `      <ExtendedData>\n        <Data name="meta_marker"><value>${localMarker}</value></Data>\n        <Data name="meta_fill"><value>${fill}</value></Data>\n        <Data name="meta_fill_op"><value>${fillOp}</value></Data>\n        <Data name="meta_stroke"><value>${stroke}</value></Data>\n        <Data name="meta_stroke_w"><value>${strokeW}</value></Data>\n      </ExtendedData>\n`;
 
-    // --- 2. Write Placemark & ExtendedData ---
-    kml += `    <Placemark>\n`;
-    kml += `      <name>${escapeXml(name)}</name>\n`;
-    kml += `      <styleUrl>#${styleId}</styleUrl>\n`;
-    
-    // Save metadata so it can be read back during import
-    kml += `      <ExtendedData>\n`;
-    kml += `        <Data name="meta_marker"><value>${localMarker}</value></Data>\n`;
-    kml += `        <Data name="meta_fill"><value>${fill}</value></Data>\n`;
-    kml += `        <Data name="meta_fill_op"><value>${fillOp}</value></Data>\n`;
-    kml += `        <Data name="meta_stroke"><value>${stroke}</value></Data>\n`;
-    kml += `        <Data name="meta_stroke_w"><value>${strokeW}</value></Data>\n`;
-    kml += `      </ExtendedData>\n`;
-
-    // Geometry coordinates
     if (type === 'Point') {
       const coords = geom.getCoordinates();
       kml += `      <Point><coordinates>${coords[0]},${coords[1]},0</coordinates></Point>\n`;
@@ -1117,60 +1109,14 @@ async function handleFile(input){
   else displayNotification('Unsupported format');
 }
 
-async function parseAndLoadKMLStringold(kmlText) {
-  const format = new ol.format.KML({ extractStyles: true });
-  const feats = format.readFeatures(kmlText, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:4326' });
-
-  if (!feats.length) throw new Error("No features extracted");
-
-  feats.forEach(feature => {
-    trackingIdCounter++;
-    const geomType = feature.getGeometry().getType();
-    const cfg = {
-      text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
-      marker: 'icons/pins/yellow_pin_classic.png',
-      fill: '#00d4aa', fillOpacity: 30, stroke: '#00ffaa', width: 2
-    };
-    
-    feature.setProperties({
-      uid: trackingIdCounter,
-      name: cfg.text,
-      meta_label: cfg.text,
-      meta_marker: cfg.marker,
-      meta_fill: cfg.fill, meta_fill_op: cfg.fillOpacity,
-      meta_stroke: cfg.stroke, meta_stroke_w: cfg.width
-    });
-    feature.setStyle(compileFeatureStyle(cfg, false, geomType));
-    workspaceSource.addFeature(feature);
-  });
-
-  map.getView().fit(workspaceSource.getExtent(), { padding: [40, 40, 40, 40], duration: 700 });
-}
-
-// Add this helper function outside your main function
-function rgbaToHex(rgba) {
-  if (!rgba || typeof rgba !== 'string') return '#000000';
-  const match = rgba.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/);
-  if (!match) return '#000000';
-  const r = parseInt(match[1]).toString(16).padStart(2, '0');
-  const g = parseInt(match[2]).toString(16).padStart(2, '0');
-  const b = parseInt(match[3]).toString(16).padStart(2, '0');
-  return `#${r}${g}${b}`;
-}
-
 async function parseAndLoadKMLString(kmlText) {
-  // extractStyles is still useful for other apps (like Google Earth) to show the right colors
   const format = new ol.format.KML({ extractStyles: true }); 
   const feats = format.readFeatures(kmlText, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:4326' });
-
   if (!feats.length) throw new Error("No features extracted");
 
   feats.forEach(feature => {
     trackingIdCounter++;
     const geomType = feature.getGeometry().getType();
-    
-    // READ THE METADATA (ExtendedData is mapped to feature.get automatically)
-    // If it's a foreign KML file, it will fall back to defaults
     const cfg = {
       text: feature.get('name') || `${geomType} ${trackingIdCounter}`,
       marker: feature.get('meta_marker') || 'icons/pins/yellow_pin_classic.png',
@@ -1180,23 +1126,13 @@ async function parseAndLoadKMLString(kmlText) {
       width: parseInt(feature.get('meta_stroke_w')) || 2
     };
     
-    // Apply properties so the Inspector works correctly
     feature.setProperties({
-      uid: trackingIdCounter,
-      name: cfg.text,
-      meta_label: cfg.text,
-      meta_marker: cfg.marker,
-      meta_fill: cfg.fill,
-      meta_fill_op: cfg.fillOpacity,
-      meta_stroke: cfg.stroke,
-      meta_stroke_w: cfg.width
+      uid: trackingIdCounter, name: cfg.text, meta_label: cfg.text, meta_marker: cfg.marker,
+      meta_fill: cfg.fill, meta_fill_op: cfg.fillOpacity, meta_stroke: cfg.stroke, meta_stroke_w: cfg.width
     });
-
-    // Re-compile style using your engine
     feature.setStyle(compileFeatureStyle(cfg, false, geomType));
     workspaceSource.addFeature(feature);
   });
-
   map.getView().fit(workspaceSource.getExtent(), { padding: [40, 40, 40, 40], duration: 700 });
 }
 
@@ -1219,24 +1155,19 @@ async function importKMZFile(blob) {
 async function triggerKMZExport(){
   const feats = workspaceSource.getFeatures();
   if(!feats.length){ displayNotification('No Features'); return; }
-
   const previouslySelected = targetSelectedFeature;
   if(previouslySelected) clearSelectedInspectorContext(); 
 
   try {
     displayNotification('Compiling layers...');
-    
     const kmlText = generateCustomKML(feats);
-
     if(previouslySelected) {
       selectInteraction.getFeatures().push(previouslySelected);
       handleFeatureSelectedEvent(previouslySelected);
     }
-
     const zip = new JSZip();
     zip.file("doc.kml", kmlText);
     const kmzBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
-
     const a = document.createElement('a');
     a.href = URL.createObjectURL(kmzBlob);
     a.download = 'workspace.kmz';
